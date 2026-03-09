@@ -6,18 +6,26 @@
 <title>My Link Page</title>
 
 <style>
+
+*{
+    box-sizing: border-box;
+}
+
 body{
+    margin:0;
     font-family: Arial, sans-serif;
     background-color:#f2f2f2;
     text-align:center;
-    padding:20px;
+    padding:20px 15px;
 }
 
 h1{
     color:#333;
+    margin-bottom:20px;
 }
 
 .container{
+    width:100%;
     max-width:400px;
     margin:auto;
 }
@@ -25,18 +33,37 @@ h1{
 .link-button{
     display:block;
     width:100%;
-    padding:15px;
-    margin:10px 0;
+    padding:16px;
+    margin:12px 0;
     background-color:#007BFF;
     color:white;
     text-decoration:none;
-    border-radius:8px;
+    border-radius:10px;
     font-size:18px;
+    font-weight:500;
 }
 
 .link-button:hover{
     background-color:#0056b3;
 }
+
+/* Extra small screens (older iphones / small android) */
+
+@media (max-width:380px){
+    .link-button{
+        font-size:16px;
+        padding:14px;
+    }
+}
+
+/* Larger phones */
+
+@media (min-width:600px){
+    .container{
+        max-width:450px;
+    }
+}
+
 </style>
 
 </head>
@@ -54,15 +81,10 @@ h1{
 <a href="https://india.inbodychat.kr/cs" class="link-button">CS chatbot</a>
 
 <a href="https://gm.weareinbody.com/" class="link-button">GM site</a>
-<a href="https://inbodylibrary.com/" class="link-button">Image pool</a>
 
-<a href="calc.html" class="link-button">
-Spare Parts Calculator
-</a>
+<a href="cal.html" class="link-button">Spare Parts Calculator</a>
 
 </div>
 
 </body>
 </html>
-
-

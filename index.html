@@ -1,151 +1,230 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Spare Parts Calculator</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f6f8;
-            text-align: center;
-            padding: 30px;
-        }
+<meta charset="UTF-8">
+<title>Spare Parts Calculator</title>
 
-        .box {
-            background: white;
-            padding: 20px;
-            width: 350px;
-            margin: auto;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-        }
+<style>
+body {
+    font-family: Arial;
+    background: #f5f7fb;
+    margin: 0;
+}
 
-        select, button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-        }
+.app {
+    max-width: 900px;
+    margin: auto;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+}
 
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
+.header {
+    background: #003399;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
 
-        .cart {
-            margin-top: 20px;
-            text-align: left;
-        }
+.section {
+    padding: 20px;
+}
 
-        .total {
-            font-weight: bold;
-            margin-top: 10px;
-        }
-    </style>
+select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+.parts {
+    margin-top: 20px;
+}
+
+.part {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+button {
+    padding: 6px 10px;
+    background: #003399;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.cart {
+    background: #121212;
+    color: white;
+    padding: 20px;
+}
+
+</style>
 </head>
 
 <body>
 
-<div class="box">
-    <h2>Spare Calculator</h2>
+<div class="app">
 
-    <!-- Device -->
-    <select id="device">
-        <option>Select Device</option>
-        <option>InBody 270</option>
-        <option>InBody 380</option>
-        <option>InBody 580</option>
+<div class="header">
+    <h2>Spare Parts Calculator</h2>
+</div>
+
+<div class="section">
+    <label>Device</label>
+    <select id="device" onchange="loadIssues()"></select>
+
+    <label>Issue</label>
+    <select id="issue" onchange="loadSubIssues()"></select>
+
+    <label>Sub Issue</label>
+    <select id="subIssue" onchange="loadParts()"></select>
+
+    <label>Pricing Tier</label>
+    <select id="tier" onchange="loadParts()">
+        <option value="t1">Tier 1</option>
+        <option value="t2">Tier 2</option>
     </select>
 
-    <!-- Issue -->
-    <select id="issue">
-        <option>Select Issue</option>
-        <option>Power Issue</option>
-        <option>Display Issue</option>
-        <option>Printer Issue</option>
-    </select>
+    <div class="parts" id="parts"></div>
+</div>
 
-    <!-- Sub Issue -->
-    <select id="subissue">
-        <option>Select Sub Issue</option>
-        <option>No Power</option>
-        <option>Flickering Screen</option>
-        <option>Printer Not Working</option>
-    </select>
+<div class="cart">
+    <h3>Cart</h3>
+    <div id="cartItems"></div>
+    <h2 id="total">₹ 0</h2>
+</div>
 
-    <!-- Tier -->
-    <select id="tier">
-        <option>Select Tier</option>
-        <option value="1">Tier 1</option>
-        <option value="2">Tier 2</option>
-        <option value="3">Tier 3</option>
-    </select>
-
-    <button onclick="addToCart()">Add to Cart</button>
-
-    <div class="cart">
-        <h3>Cart</h3>
-        <ul id="cartList"></ul>
-        <div class="total" id="total">Total: ₹0</div>
-    </div>
 </div>
 
 <script>
-let cart = [];
-let total = 0;
 
-// Dummy pricing logic (replace with Excel later)
-function getSpare(issue, subissue) {
-    if(issue === "Power Issue" && subissue === "No Power") {
-        return { name: "SMPS Board", price: 2000 };
+// 🔥 THIS WILL COME FROM YOUR EXCEL (convert to JSON)
+const DB = [
+    {
+        device: "InBody 270",
+        issue: "Display",
+        subIssue: "Screen not working",
+        part: "LCD Panel",
+        t1: 5000,
+        t2: 6000
+    },
+    {
+        device: "InBody 270",
+        issue: "Display",
+        subIssue: "Screen not working",
+        part: "Display Cable",
+        t1: 800,
+        t2: 1000
+    },
+    {
+        device: "InBody 580",
+        issue: "Weight",
+        subIssue: "Wrong reading",
+        part: "Loadcell",
+        t1: 25000,
+        t2: 30000
     }
-    if(issue === "Display Issue") {
-        return { name: "Display Panel", price: 3500 };
-    }
-    if(issue === "Printer Issue") {
-        return { name: "Printer Module", price: 2500 };
-    }
-    return { name: "Unknown Spare", price: 0 };
+];
+
+// CART
+let cart = [];
+
+// INIT DEVICES
+function init() {
+    const devices = [...new Set(DB.map(d => d.device))];
+    device.innerHTML = '<option>Select</option>';
+    devices.forEach(d => device.innerHTML += `<option>${d}</option>`);
+}
+init();
+
+// STEP 1 → ISSUE
+function loadIssues() {
+    const selected = device.value;
+    const issues = [...new Set(DB.filter(d => d.device === selected).map(d => d.issue))];
+
+    issue.innerHTML = '<option>Select</option>';
+    issues.forEach(i => issue.innerHTML += `<option>${i}</option>`);
 }
 
-function addToCart() {
-    let device = document.getElementById("device").value;
-    let issue = document.getElementById("issue").value;
-    let subissue = document.getElementById("subissue").value;
-    let tier = document.getElementById("tier").value;
+// STEP 2 → SUB ISSUE
+function loadSubIssues() {
+    const selectedDevice = device.value;
+    const selectedIssue = issue.value;
 
-    let spare = getSpare(issue, subissue);
+    const subIssues = [...new Set(
+        DB.filter(d => d.device === selectedDevice && d.issue === selectedIssue)
+        .map(d => d.subIssue)
+    )];
 
-    // Tier multiplier
-    let multiplier = 1;
-    if(tier == 2) multiplier = 1.2;
-    if(tier == 3) multiplier = 1.5;
+    subIssue.innerHTML = '<option>Select</option>';
+    subIssues.forEach(s => subIssue.innerHTML += `<option>${s}</option>`);
+}
 
-    let finalPrice = spare.price * multiplier;
+// STEP 3 → PARTS
+function loadParts() {
+    const d = device.value;
+    const i = issue.value;
+    const s = subIssue.value;
+    const tierVal = tier.value;
 
-    cart.push({
-        device,
-        spare: spare.name,
-        price: finalPrice
+    const filtered = DB.filter(x =>
+        x.device === d &&
+        x.issue === i &&
+        x.subIssue === s
+    );
+
+    const container = document.getElementById("parts");
+    container.innerHTML = "<h3>Spare Parts</h3>";
+
+    filtered.forEach(p => {
+        const price = p[tierVal];
+
+        container.innerHTML += `
+            <div class="part">
+                ${p.part} - ₹${price}
+                <button onclick="addToCart('${p.part}', ${price})">Add</button>
+            </div>
+        `;
     });
+}
 
-    total += finalPrice;
+// ADD TO CART
+function addToCart(name, price) {
+    const existing = cart.find(i => i.name === name);
+
+    if (existing) {
+        existing.qty++;
+    } else {
+        cart.push({ name, price, qty: 1 });
+    }
 
     renderCart();
 }
 
+// RENDER CART
 function renderCart() {
-    let list = document.getElementById("cartList");
-    list.innerHTML = "";
+    const container = document.getElementById("cartItems");
+    container.innerHTML = "";
+
+    let total = 0;
 
     cart.forEach(item => {
-        let li = document.createElement("li");
-        li.innerText = item.spare + " - ₹" + item.price;
-        list.appendChild(li);
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+
+        container.innerHTML += `
+            <div>
+                ${item.name} × ${item.qty} = ₹${itemTotal}
+            </div>
+        `;
     });
 
-    document.getElementById("total").innerText = "Total: ₹" + total.toFixed(2);
+    document.getElementById("total").innerText = "₹ " + total;
 }
+
 </script>
 
 </body>

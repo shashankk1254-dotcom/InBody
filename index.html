@@ -4,166 +4,93 @@
 <meta charset="UTF-8">
 <title>Spare Parts Calculator</title>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <style>
-body {
-    font-family: Arial;
-    background: #f5f7fb;
-    margin: 0;
-}
-
-.app {
-    max-width: 900px;
-    margin: auto;
-    background: white;
-    border-radius: 20px;
-    overflow: hidden;
-}
-
-.header {
-    background: #003399;
-    color: white;
-    padding: 20px;
-    text-align: center;
-}
-
-.section {
-    padding: 20px;
-}
-
-select {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-}
-
-.parts {
-    margin-top: 20px;
-}
-
-.part {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-button {
-    padding: 6px 10px;
-    background: #003399;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-.cart {
-    background: #121212;
-    color: white;
-    padding: 20px;
-}
-
+body { font-family: Segoe UI; background:#f4f6f9; }
+.app { max-width:900px; margin:auto; background:white; border-radius:15px; }
+.header { background:#eef2f7; padding:20px; text-align:center; font-weight:600; }
+.section { padding:20px; }
+select { width:100%; padding:10px; margin-top:8px; }
+.part { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; }
+button { background:#4a90e2; color:white; border:none; padding:6px 10px; cursor:pointer; }
+.cart { background:#fafafa; padding:20px; border-top:1px solid #ddd; }
+.cart-item { display:flex; justify-content:space-between; margin-bottom:10px; }
 </style>
 </head>
 
 <body>
 
 <div class="app">
-
-<div class="header">
-    <h2>Spare Parts Calculator</h2>
-</div>
+<div class="header">Spare Parts Calculator</div>
 
 <div class="section">
-    <label>Device</label>
-    <select id="device" onchange="loadIssues()"></select>
+<select id="device" onchange="loadIssues()"></select>
+<select id="issue" onchange="loadSubIssues()"></select>
+<select id="subIssue" onchange="loadParts()"></select>
 
-    <label>Issue</label>
-    <select id="issue" onchange="loadSubIssues()"></select>
+<select id="tier" onchange="loadParts()">
+<option value="T1">Tier 1</option>
+<option value="T2">Tier 2</option>
+</select>
 
-    <label>Sub Issue</label>
-    <select id="subIssue" onchange="loadParts()"></select>
-
-    <label>Pricing Tier</label>
-    <select id="tier" onchange="loadParts()">
-        <option value="t1">Tier 1</option>
-        <option value="t2">Tier 2</option>
-    </select>
-
-    <div class="parts" id="parts"></div>
+<div id="parts"></div>
 </div>
 
 <div class="cart">
-    <h3>Cart</h3>
-    <div id="cartItems"></div>
-    <h2 id="total">₹ 0</h2>
+<h3>Cart</h3>
+<div id="cartItems"></div>
+<h2 id="total">₹ 0</h2>
 </div>
 
 </div>
 
 <script>
 
-// 🔥 THIS WILL COME FROM YOUR EXCEL (convert to JSON)
-const DB = [
-    {
-        device: "InBody 270",
-        issue: "Display",
-        subIssue: "Screen not working",
-        part: "LCD Panel",
-        t1: 5000,
-        t2: 6000
-    },
-    {
-        device: "InBody 270",
-        issue: "Display",
-        subIssue: "Screen not working",
-        part: "Display Cable",
-        t1: 800,
-        t2: 1000
-    },
-    {
-        device: "InBody 580",
-        issue: "Weight",
-        subIssue: "Wrong reading",
-        part: "Loadcell",
-        t1: 25000,
-        t2: 30000
-    }
-];
-
-// CART
+let DB = [];
 let cart = [];
 
-// INIT DEVICES
+// 🔥 LOAD EXCEL
+fetch('data.xlsx')
+.then(res => res.arrayBuffer())
+.then(data => {
+    const workbook = XLSX.read(data);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    DB = XLSX.utils.sheet_to_json(sheet);
+    init();
+});
+
+// INIT
 function init() {
-    const devices = [...new Set(DB.map(d => d.device))];
-    device.innerHTML = '<option>Select</option>';
+    const devices = [...new Set(DB.map(d => d.Device))];
+    device.innerHTML = '<option>Select Device</option>';
     devices.forEach(d => device.innerHTML += `<option>${d}</option>`);
 }
-init();
 
-// STEP 1 → ISSUE
+// LOAD ISSUES
 function loadIssues() {
-    const selected = device.value;
-    const issues = [...new Set(DB.filter(d => d.device === selected).map(d => d.issue))];
+    const d = device.value;
+    const issues = [...new Set(DB.filter(x => x.Device === d).map(x => x.Issue))];
 
-    issue.innerHTML = '<option>Select</option>';
+    issue.innerHTML = '<option>Select Issue</option>';
     issues.forEach(i => issue.innerHTML += `<option>${i}</option>`);
 }
 
-// STEP 2 → SUB ISSUE
+// LOAD SUB ISSUES
 function loadSubIssues() {
-    const selectedDevice = device.value;
-    const selectedIssue = issue.value;
+    const d = device.value;
+    const i = issue.value;
 
-    const subIssues = [...new Set(
-        DB.filter(d => d.device === selectedDevice && d.issue === selectedIssue)
-        .map(d => d.subIssue)
+    const sub = [...new Set(
+        DB.filter(x => x.Device === d && x.Issue === i)
+        .map(x => x.SubIssue)
     )];
 
-    subIssue.innerHTML = '<option>Select</option>';
-    subIssues.forEach(s => subIssue.innerHTML += `<option>${s}</option>`);
+    subIssue.innerHTML = '<option>Select SubIssue</option>';
+    sub.forEach(s => subIssue.innerHTML += `<option>${s}</option>`);
 }
 
-// STEP 3 → PARTS
+// LOAD PARTS
 function loadParts() {
     const d = device.value;
     const i = issue.value;
@@ -171,58 +98,77 @@ function loadParts() {
     const tierVal = tier.value;
 
     const filtered = DB.filter(x =>
-        x.device === d &&
-        x.issue === i &&
-        x.subIssue === s
+        x.Device === d &&
+        x.Issue === i &&
+        x.SubIssue === s
     );
 
     const container = document.getElementById("parts");
-    container.innerHTML = "<h3>Spare Parts</h3>";
+    container.innerHTML = "<h3>Parts</h3>";
 
     filtered.forEach(p => {
         const price = p[tierVal];
 
         container.innerHTML += `
             <div class="part">
-                ${p.part} - ₹${price}
-                <button onclick="addToCart('${p.part}', ${price})">Add</button>
+                ${p.Part} - ₹${price}
+                <button onclick="addToCart('${p.Part}', ${price}, ${p.GST || 0})">Add</button>
             </div>
         `;
     });
 }
 
 // ADD TO CART
-function addToCart(name, price) {
+function addToCart(name, price, gst) {
     const existing = cart.find(i => i.name === name);
 
     if (existing) {
         existing.qty++;
     } else {
-        cart.push({ name, price, qty: 1 });
+        cart.push({ name, price, qty:1, gst });
     }
 
     renderCart();
 }
 
+// REMOVE
+function removeItem(name) {
+    cart = cart.filter(i => i.name !== name);
+    renderCart();
+}
+
+// QTY CHANGE
+function changeQty(name, d) {
+    const item = cart.find(i => i.name === name);
+    item.qty += d;
+    if(item.qty <= 0) removeItem(name);
+    renderCart();
+}
+
 // RENDER CART
 function renderCart() {
+    let total = 0;
     const container = document.getElementById("cartItems");
     container.innerHTML = "";
 
-    let total = 0;
-
     cart.forEach(item => {
-        const itemTotal = item.price * item.qty;
+        const gstMul = 1 + item.gst;
+        const itemTotal = item.price * item.qty * gstMul;
         total += itemTotal;
 
         container.innerHTML += `
-            <div>
-                ${item.name} × ${item.qty} = ₹${itemTotal}
+            <div class="cart-item">
+                ${item.name} × ${item.qty} = ₹${Math.round(itemTotal)}
+                <div>
+                    <button onclick="changeQty('${item.name}',-1)">-</button>
+                    <button onclick="changeQty('${item.name}',1)">+</button>
+                    <button onclick="removeItem('${item.name}')">x</button>
+                </div>
             </div>
         `;
     });
 
-    document.getElementById("total").innerText = "₹ " + total;
+    document.getElementById("total").innerText = "₹ " + Math.round(total);
 }
 
 </script>

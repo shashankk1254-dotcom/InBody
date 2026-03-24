@@ -4,34 +4,89 @@
 <meta charset="UTF-8">
 <title>Spare Parts Calculator</title>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
 <style>
-body { font-family: Segoe UI; background:#f4f6f9; }
-.app { max-width:900px; margin:auto; background:white; border-radius:15px; }
-.header { background:#eef2f7; padding:20px; text-align:center; font-weight:600; }
-.section { padding:20px; }
-select { width:100%; padding:10px; margin-top:8px; }
-.part { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; }
-button { background:#4a90e2; color:white; border:none; padding:6px 10px; cursor:pointer; }
-.cart { background:#fafafa; padding:20px; border-top:1px solid #ddd; }
-.cart-item { display:flex; justify-content:space-between; margin-bottom:10px; }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+}
+
+.app {
+    max-width: 900px;
+    margin: 30px auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.header {
+    background: #eef2f7;
+    padding: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.section {
+    padding: 20px;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.part {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+button {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.cart {
+    background: #fafafa;
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.total {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 15px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="app">
+
 <div class="header">Spare Parts Calculator</div>
 
 <div class="section">
 <select id="device" onchange="loadIssues()"></select>
-<select id="issue" onchange="loadSubIssues()"></select>
-<select id="subIssue" onchange="loadParts()"></select>
+<select id="issue" onchange="loadParts()"></select>
 
 <select id="tier" onchange="loadParts()">
-<option value="T1">Tier 1</option>
-<option value="T2">Tier 2</option>
+<option value="t1">Tier 1</option>
+<option value="t2">Tier 2</option>
 </select>
 
 <div id="parts"></div>
@@ -40,79 +95,85 @@ button { background:#4a90e2; color:white; border:none; padding:6px 10px; cursor:
 <div class="cart">
 <h3>Cart</h3>
 <div id="cartItems"></div>
-<h2 id="total">₹ 0</h2>
+<div class="total" id="total">₹ 0</div>
 </div>
 
 </div>
 
 <script>
 
-let DB = [];
+// 🔥 YOUR MASTER DB (EXPAND WITH 380 SAME FORMAT)
+const masterDB = {
+"All models": {
+    "Basic Service": [
+        {n:"Service Charge",m:2500,t1:3500,t2:4000,g:0.18},
+        {n:"Unit Calibration",m:2500,t1:3000,t2:4000,g:0.18},
+        {n:"Loadcell Calibration",m:3000,t1:4500,t2:5500,g:0.18},
+        {n:"Firmware Upgrade",m:1000,t1:1500,t2:2000,g:0.18}
+    ]
+},
+
+"InBody 270": {
+    "LCD Not Working": [
+        {n:"Board LNO6 270",m:4810,t1:5610,t2:6410,g:0.05},
+        {n:"LCD Panel+Touch",m:7480,t1:8730,t2:9970,g:0.05}
+    ]
+},
+
+"InBody 580": {
+    "Weight Measurement Issue": [
+        {n:"Board Loadcell",m:24030,t1:28040,t2:32040,g:0.05}
+    ]
+},
+
+"InBody 120": {
+    "Error Code Err 2": [
+        {n:"Board IF 120",m:16990,t1:19820,t2:22650,g:0.05}
+    ]
+}
+};
+
+// CART
 let cart = [];
 
-// 🔥 LOAD EXCEL
-fetch('data.xlsx')
-.then(res => res.arrayBuffer())
-.then(data => {
-    const workbook = XLSX.read(data);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    DB = XLSX.utils.sheet_to_json(sheet);
-    init();
-});
-
-// INIT
+// INIT DEVICES
 function init() {
-    const devices = [...new Set(DB.map(d => d.Device))];
+    const devices = Object.keys(masterDB).filter(d => d !== "All models");
     device.innerHTML = '<option>Select Device</option>';
     devices.forEach(d => device.innerHTML += `<option>${d}</option>`);
 }
+init();
 
 // LOAD ISSUES
 function loadIssues() {
     const d = device.value;
-    const issues = [...new Set(DB.filter(x => x.Device === d).map(x => x.Issue))];
+    const issues = Object.keys(masterDB[d] || {});
 
     issue.innerHTML = '<option>Select Issue</option>';
     issues.forEach(i => issue.innerHTML += `<option>${i}</option>`);
 }
 
-// LOAD SUB ISSUES
-function loadSubIssues() {
-    const d = device.value;
-    const i = issue.value;
-
-    const sub = [...new Set(
-        DB.filter(x => x.Device === d && x.Issue === i)
-        .map(x => x.SubIssue)
-    )];
-
-    subIssue.innerHTML = '<option>Select SubIssue</option>';
-    sub.forEach(s => subIssue.innerHTML += `<option>${s}</option>`);
-}
-
-// LOAD PARTS
+// LOAD PARTS (MERGE SERVICE + ISSUE)
 function loadParts() {
     const d = device.value;
     const i = issue.value;
-    const s = subIssue.value;
     const tierVal = tier.value;
 
-    const filtered = DB.filter(x =>
-        x.Device === d &&
-        x.Issue === i &&
-        x.SubIssue === s
-    );
+    const parts = [
+        ...(masterDB["All models"]["Basic Service"] || []),
+        ...(masterDB[d]?.[i] || [])
+    ];
 
     const container = document.getElementById("parts");
-    container.innerHTML = "<h3>Parts</h3>";
+    container.innerHTML = "<h3>Items</h3>";
 
-    filtered.forEach(p => {
+    parts.forEach(p => {
         const price = p[tierVal];
 
         container.innerHTML += `
             <div class="part">
-                ${p.Part} - ₹${price}
-                <button onclick="addToCart('${p.Part}', ${price}, ${p.GST || 0})">Add</button>
+                ${p.n} - ₹${price}
+                <button onclick="addToCart('${p.n}', ${price}, ${p.g})">Add</button>
             </div>
         `;
     });
@@ -137,28 +198,26 @@ function removeItem(name) {
     renderCart();
 }
 
-// QTY CHANGE
-function changeQty(name, d) {
+// CHANGE QTY
+function changeQty(name, delta) {
     const item = cart.find(i => i.name === name);
-    item.qty += d;
-    if(item.qty <= 0) removeItem(name);
+    item.qty += delta;
+    if (item.qty <= 0) removeItem(name);
     renderCart();
 }
 
 // RENDER CART
 function renderCart() {
     let total = 0;
-    const container = document.getElementById("cartItems");
-    container.innerHTML = "";
+    cartItems.innerHTML = "";
 
     cart.forEach(item => {
-        const gstMul = 1 + item.gst;
-        const itemTotal = item.price * item.qty * gstMul;
-        total += itemTotal;
+        const val = item.price * item.qty * (1 + item.gst);
+        total += val;
 
-        container.innerHTML += `
+        cartItems.innerHTML += `
             <div class="cart-item">
-                ${item.name} × ${item.qty} = ₹${Math.round(itemTotal)}
+                ${item.name} × ${item.qty} = ₹${Math.round(val)}
                 <div>
                     <button onclick="changeQty('${item.name}',-1)">-</button>
                     <button onclick="changeQty('${item.name}',1)">+</button>
@@ -168,6 +227,7 @@ function renderCart() {
         `;
     });
 
+    total.innerText = "₹ " + Math.round(total);
     document.getElementById("total").innerText = "₹ " + Math.round(total);
 }
 

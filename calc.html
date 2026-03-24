@@ -1,465 +1,331 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spare Parts Calculator</title>
   <style>
-    :root { --b:#e5e7eb; --t:#111827; --m:#6b7280; --bg:#f9fafb; }
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;color:var(--t);background:var(--bg);}
-    .wrap{max-width:1200px;margin:24px auto;padding:0 16px;}
-    h1{font-size:20px;margin:0 0 12px;}
-    .card{background:#fff;border:1px solid var(--b);border-radius:12px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
-    .grid{display:grid;gap:12px}
-    .grid.cols{grid-template-columns:repeat(12,1fr)}
-    .col-3{grid-column:span 3}
-    .col-4{grid-column:span 4}
-    .col-5{grid-column:span 5}
-    .col-6{grid-column:span 6}
-    .col-7{grid-column:span 7}
-    .col-12{grid-column:span 12}
-    label{display:block;font-size:12px;color:var(--m);margin:0 0 6px}
-    select,input[type="text"],input[type="number"]{width:100%;padding:10px 10px;border:1px solid var(--b);border-radius:10px;font-size:14px;outline:none}
-    input[type="number"]{padding-right:6px}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid var(--b);padding:10px 8px;font-size:13px;vertical-align:top}
-    th{font-size:12px;color:var(--m);text-align:left;background:#fff;position:sticky;top:0}
-    .muted{color:var(--m)}
-    .pill{display:inline-block;border:1px solid var(--b);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--m);margin-left:6px}
-    .btn{border:1px solid var(--b);background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
-    .btn.primary{background:#111827;color:#fff;border-color:#111827}
-    .btn.danger{background:#fff;border-color:#ef4444;color:#b91c1c}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .right{margin-left:auto}
-    .totals{display:grid;gap:6px}
-    .totals div{display:flex;justify-content:space-between;gap:12px}
-    .totals b{font-size:14px}
-    .scroll{max-height:420px;overflow:auto;border:1px solid var(--b);border-radius:12px}
-    .note{font-size:12px;color:var(--m);line-height:1.35}
-    @media (max-width: 980px){
-      .col-3,.col-4,.col-5,.col-6,.col-7{grid-column:span 12}
-      th{position:static}
-      .scroll{max-height:unset}
+    :root {
+      --blue:#003399; --cyan:#00d4ff; --dark:#101827; --bg:#f4f7fb; --card:#ffffff; --line:#e8edf5;
+      --text:#243041; --muted:#6b7280; --good:#0f766e; --soft:#eef4ff;
     }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Segoe UI, system-ui, sans-serif; background:linear-gradient(180deg,#eef4ff 0%, #f9fbff 100%); color:var(--text); }
+    .wrap { max-width:1200px; margin:24px auto; padding:0 16px; }
+    .app { background:var(--card); border-radius:24px; overflow:hidden; box-shadow:0 20px 60px rgba(16,24,39,.12); border:1px solid rgba(0,51,153,.07); }
+    .hero { background:linear-gradient(135deg,var(--blue),#1d4ed8 60%,#0ea5e9); color:#fff; padding:28px; }
+    .hero h1 { margin:0 0 8px; font-size:clamp(1.5rem,2vw,2.2rem); }
+    .hero p { margin:0; opacity:.92; max-width:850px; }
+    .content { padding:20px; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:16px; }
+    .field { background:#fbfdff; border:1px solid var(--line); border-radius:16px; padding:14px; }
+    .field label { display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin-bottom:8px; }
+    .field select, .field input { width:100%; border:1.8px solid #dbe4f0; border-radius:12px; padding:12px 14px; background:#fff; font-size:1rem; outline:none; }
+    .field select:focus, .field input:focus { border-color:#2563eb; box-shadow:0 0 0 4px rgba(37,99,235,.08); }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:12px 0 18px; }
+    button { border:none; border-radius:12px; padding:11px 14px; font-weight:700; cursor:pointer; }
+    .primary { background:var(--blue); color:#fff; }
+    .ghost { background:#eef4ff; color:var(--blue); border:1px solid #d7e3ff; }
+    .warn { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:18px 0; }
+    .stat { background:var(--dark); color:#fff; border-radius:18px; padding:18px; }
+    .stat small { display:block; color:#9ca3af; text-transform:uppercase; font-weight:700; letter-spacing:.05em; margin-bottom:6px; }
+    .stat strong { font-size:1.7rem; color:var(--cyan); }
+    .stat:nth-child(1) { background:#fff; color:var(--text); border:1px solid var(--line); }
+    .stat:nth-child(1) strong { color:var(--blue); }
+    .table-card { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; }
+    .sections-grid { display:grid; grid-template-columns:minmax(320px, 380px) minmax(0, 1fr); gap:14px; align-items:start; }
+    .service-card { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; }
+    .service-card .table-wrap, .table-card .table-wrap { max-height:520px; overflow:auto; }
+    .service-tag { display:inline-flex; align-items:center; gap:6px; background:#eef4ff; color:var(--blue); border:1px solid #d7e3ff; padding:5px 10px; border-radius:999px; font-size:.78rem; font-weight:700; }
+    .service-highlight { background:linear-gradient(180deg,#fbfdff 0%, #f4f8ff 100%); }
+    .table-head { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); background:#fbfdff; }
+    .table-head h2 { margin:0; font-size:1rem; }
+    .hint { color:var(--muted); font-size:.9rem; }
+    .table-wrap { overflow:auto; }
+    table { width:100%; border-collapse:collapse; min-width:980px; }
+    th, td { padding:12px 10px; border-bottom:1px solid #f1f5f9; text-align:left; vertical-align:top; }
+    th { font-size:.76rem; text-transform:uppercase; color:#6b7280; background:#fff; position:sticky; top:0; z-index:1; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#eef2ff; color:#4338ca; font-size:.76rem; font-weight:700; }
+    .sub { display:block; color:#6b7280; font-size:.82rem; margin-top:4px; }
+    .note { margin-top:14px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; padding:14px; color:#475569; font-size:.92rem; }
+    .empty { padding:28px; text-align:center; color:#6b7280; }
+    .footer { padding:14px 20px 22px; color:#6b7280; font-size:.86rem; }
+    @media (max-width: 980px) { .grid, .stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .sections-grid { grid-template-columns:1fr; } }
+    @media (max-width: 640px) { .grid, .stats { grid-template-columns:1fr; } .hero { padding:22px; } .content { padding:14px; } .toolbar { flex-direction:column; align-items:stretch; } button { width:100%; } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Spare Parts Calculator <span class="pill">Single-file HTML</span></h1>
-
-    <div class="grid cols">
-      <!-- Filters -->
-      <div class="card col-12">
-        <div class="grid cols">
-          <div class="col-4">
-            <label>Machine</label>
+    <div class="app">
+      <div class="hero">
+        <h1>Spare Parts Calculator</h1>
+        <p>Built using your reference HTML and spreadsheet. Select a machine, choose the reported issue, optionally filter by side, then select or deselect parts while keeping service charges in a separate matching section for quick total calculation including GST.</p>
+      </div>
+      <div class="content">
+        <div class="grid">
+          <div class="field">
+            <label for="machineSelect">Machine Category</label>
             <select id="machineSelect"></select>
           </div>
-          <div class="col-4">
-            <label>Package</label>
-            <select id="packageSelect"></select>
+          <div class="field">
+            <label for="issueSelect">Reported Issue / Package</label>
+            <select id="issueSelect" disabled></select>
           </div>
-          <div class="col-4">
-            <label>Search (part name / item code)</label>
-            <input id="searchInput" type="text" placeholder="e.g., Loadcell, E0110..." />
+          <div class="field">
+            <label for="sideSelect">R / L Filter</label>
+            <select id="sideSelect" disabled></select>
           </div>
+          <div class="field">
+            <label for="searchInput">Search Part / Code</label>
+            <input id="searchInput" type="text" placeholder="Type item name or code" />
+          </div>
+        </div>
 
-          <div class="col-7">
-            <label>Price Column</label>
-            <div class="row">
-              <label style="margin:0;display:flex;gap:8px;align-items:center;">
-                <input type="radio" name="priceMode" value="Tier1_MSP" checked />
-                Tier1 MSP
-              </label>
-              <label style="margin:0;display:flex;gap:8px;align-items:center;">
-                <input type="radio" name="priceMode" value="Mid_Price" />
-                Middle Price (as in sheet)
-              </label>
-              <label style="margin:0;display:flex;gap:8px;align-items:center;">
-                <input type="radio" name="priceMode" value="Tier2_MRP" />
-                Tier2 MRP
-              </label>
-              <span class="pill" id="priceModeLabel"></span>
+        <div class="toolbar">
+          <button class="primary" id="selectAllBtn">Select All Visible</button>
+          <button class="ghost" id="deselectAllBtn">Deselect All Visible</button>
+          <button class="ghost" id="resetBtn">Reset Filters</button>
+          <span class="hint" id="statusText">Choose a machine to begin.</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><small>Selected Items</small><strong id="selectedCount">0</strong></div>
+          <div class="stat"><small>Total MSP (Inc. GST)</small><strong id="mspTotal">₹ 0</strong></div>
+          <div class="stat"><small>Estimated Total MRP T1 + GST</small><strong id="t1Total">₹ 0</strong></div>
+          <div class="stat"><small>Estimated Total MRP T2 + GST</small><strong id="t2Total">₹ 0</strong></div>
+        </div>
+
+        <div class="sections-grid">
+          <div class="service-card service-highlight">
+            <div class="table-head">
+              <h2>Service Charge</h2>
+              <div class="service-tag">18% GST</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:56px">Select</th>
+                    <th>Service Description</th>
+                    <th>GST</th>
+                    <th style="text-align:right">MSP</th>
+                    <th style="text-align:right">MRP T1</th>
+                    <th style="text-align:right">MRP T2</th>
+                  </tr>
+                </thead>
+                <tbody id="serviceBody">
+                  <tr><td colspan="6" class="empty">No service items available.</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div class="col-5">
-            <label>GST %</label>
-            <div class="row">
-              <input id="gstInput" type="number" min="0" step="0.01" value="18" />
-              <button class="btn" id="clearCartBtn" title="Remove all items">Clear Cart</button>
-              <button class="btn primary" id="downloadBtn" title="Download cart as CSV">Download Quote CSV</button>
+          <div class="table-card">
+            <div class="table-head">
+              <h2>Frequent Spare Parts</h2>
+              <div class="hint">All visible spare parts are auto-selected when an issue is chosen.</div>
             </div>
-            <div class="note" style="margin-top:6px">
-              Tip: Select Machine + Package → click <b>Add</b> to build a quote. Edit quantities in the cart.
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:56px">Select</th>
+                    <th style="width:90px">Side</th>
+                    <th>Part Description / Code</th>
+                    <th>GST</th>
+                    <th style="text-align:right">MSP</th>
+                    <th style="text-align:right">MRP T1</th>
+                    <th style="text-align:right">MRP T2</th>
+                  </tr>
+                </thead>
+                <tbody id="partsBody">
+                  <tr><td colspan="7" class="empty">No parts loaded yet.</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Parts list -->
-      <div class="card col-7">
-        <div class="row" style="margin-bottom:10px">
-          <b>Parts List</b>
-          <span class="muted" id="partsCount"></span>
-          <span class="right muted" style="font-size:12px">Click “Add” to put into cart</span>
-        </div>
-
-        <div class="scroll">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:70px">R/L</th>
-                <th style="width:140px">Item Code</th>
-                <th>Spare Part</th>
-                <th style="width:120px">Unit Price</th>
-                <th style="width:92px"></th>
-              </tr>
-            </thead>
-            <tbody id="partsTbody"></tbody>
-          </table>
+        <div class="note">
+          <strong>GST rule used:</strong> the new <strong>Service Charge</strong> section keeps service items separate at <strong>18%</strong>, while spare parts remain in their own section at <strong>5%</strong>, following the same color and layout patterns from your reference tool.
         </div>
       </div>
-
-      <!-- Cart -->
-      <div class="card col-5">
-        <div class="row" style="margin-bottom:10px">
-          <b>Cart</b>
-          <span class="muted" id="cartCount"></span>
-        </div>
-
-        <div class="scroll" style="max-height:320px">
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th style="width:78px">Qty</th>
-                <th style="width:110px">Unit</th>
-                <th style="width:110px">Line</th>
-                <th style="width:44px"></th>
-              </tr>
-            </thead>
-            <tbody id="cartTbody"></tbody>
-          </table>
-        </div>
-
-        <div style="margin-top:12px" class="totals">
-          <div><span class="muted">Subtotal</span><span id="subTotal">0</span></div>
-          <div><span class="muted">GST</span><span id="gstAmt">0</span></div>
-          <div><b>Total</b><b id="grandTotal">0</b></div>
-        </div>
-
-        <div class="note" style="margin-top:10px">
-          Prices are taken exactly from your sheet columns:
-          <b>Tier1 MSP</b>, <b>Middle Price</b>, <b>Tier2 MRP</b>.
-          If you later split/add more price columns, update the data keys in the JS.
-        </div>
-      </div>
+      <div class="footer">Reference base: uploaded HTML layout + uploaded spreadsheet data. Standalone file, no external dependencies required.</div>
     </div>
   </div>
 
-  <script>
-    // ====== DATA (embedded from your attached sheet) ======
-    // Columns: No, Machine, Package, R_or_L, Item_Code, Spare_Parts, Tier1_MSP, Mid_Price, Tier2_MRP
-    const PARTS = [
-      {"No":"1","Machine":"All models","Package":"Basic Service","R_or_L":"","Item_Code":"","Spare_Parts":"Service Charge","Tier1_MSP":2500,"Mid_Price":3500,"Tier2_MRP":4000},
-      {"No":"1","Machine":"All models","Package":"Basic Service","R_or_L":"","Item_Code":"","Spare_Parts":"Unit Calibration","Tier1_MSP":2500,"Mid_Price":3000,"Tier2_MRP":4000},
-      {"No":"1","Machine":"All models","Package":"Basic Service","R_or_L":"","Item_Code":"","Spare_Parts":"Loadcell Calibration","Tier1_MSP":3000,"Mid_Price":4500,"Tier2_MRP":5500},
-      {"No":"1","Machine":"All models","Package":"Basic Service","R_or_L":"","Item_Code":"","Spare_Parts":"Firmware Upgrade","Tier1_MSP":1000,"Mid_Price":1500,"Tier2_MRP":2000},
-      {"No":"1","Machine":"All models","Package":"Basic Service","R_or_L":"","Item_Code":"","Spare_Parts":"Adapter 3.4A_3rd BPM040S12F07 (12V, 3.4A)","Tier1_MSP":4490,"Mid_Price":5240,"Tier2_MRP":5990},
-      {"No":"2","Machine":"InBody 270","Package":"Contact Touch Issue","R_or_L":"L","Item_Code":"E01101213","Spare_Parts":"Cable Foot L InBody270 Blue","Tier1_MSP":860,"Mid_Price":1000,"Tier2_MRP":1140},
-      {"No":"2","Machine":"InBody 270","Package":"Contact Touch Issue","R_or_L":"R","Item_Code":"E01101214","Spare_Parts":"Cable Foot R InBody270 Yellow","Tier1_MSP":860,"Mid_Price":1000,"Tier2_MRP":1140},
-      {"No":"2","Machine":"InBody 270","Package":"Contact Touch Issue","R_or_L":"L","Item_Code":"E01101211","Spare_Parts":"Cable Hand L InBody270 Red","Tier1_MSP":750,"Mid_Price":880,"Tier2_MRP":1000},
-      {"No":"2","Machine":"InBody 270","Package":"Contact Touch Issue","R_or_L":"R","Item_Code":"E01101212","Spare_Parts":"Cable Hand R InBody270 Black","Tier1_MSP":750,"Mid_Price":880,"Tier2_MRP":1000},
-      {"No":"2","Machine":"InBody 270","Package":"Contact Touch Issue","R_or_L":"","Item_Code":"I8F813001","Spare_Parts":"Board Analog InBody270","Tier1_MSP":45390,"Mid_Price":52960,"Tier2_MRP":60520},
+<script>
+const DATA = [{"machine": "All models", "issue": "Basic Service", "side": "", "code": "", "name": "Service Charge", "msp": 2500.0, "t1": 3500.0, "t2": 4000.0, "gst": 0.18}, {"machine": "All models", "issue": "Basic Service", "side": "", "code": "", "name": "Unit Calibration", "msp": 2500.0, "t1": 3000.0, "t2": 4000.0, "gst": 0.18}, {"machine": "All models", "issue": "Basic Service", "side": "", "code": "", "name": "Loadcell Calibration", "msp": 3000.0, "t1": 4500.0, "t2": 5500.0, "gst": 0.18}, {"machine": "All models", "issue": "Basic Service", "side": "", "code": "", "name": "Firmware Upgrade", "msp": 1000.0, "t1": 1500.0, "t2": 2000.0, "gst": 0.18}, {"machine": "All models", "issue": "Basic Service", "side": "", "code": "", "name": "Adapter 3.4A_3rd BPM040S12F07 (12V, 3.4A)", "msp": 4490.0, "t1": 5240.0, "t2": 5990.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "L", "code": "E01101213", "name": "Cable Foot L InBody270 Blue", "msp": 860.0, "t1": 1000.0, "t2": 1140.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "R", "code": "E01101214", "name": "Cable Foot R InBody270 Yellow", "msp": 860.0, "t1": 1000.0, "t2": 1140.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "L", "code": "E01101211", "name": "Cable Hand L InBody270 Red", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "R", "code": "E01101212", "name": "Cable Hand R InBody270 Black", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "", "code": "I8F813001", "name": "Board Analog InBody270", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "", "code": "I88118001", "name": "Board Electrode Hand InBody270", "msp": 2670.0, "t1": 3120.0, "t2": 3560.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Touch Issue", "side": "", "code": "I8F921001", "name": "Board Electrode Foot InBody270", "msp": 2670.0, "t1": 3120.0, "t2": 3560.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Customer Support", "side": "", "code": "I8D312001", "name": "Board DNO2 InBody770", "msp": 49880.0, "t1": 58190.0, "t2": 66510.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Customer Support", "side": "", "code": "I8F813001", "name": "Board Analog InBody270", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Customer Support", "side": "", "code": "E01106052", "name": "Cable IF InBody270", "msp": 1930.0, "t1": 2250.0, "t2": 2570.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Contact Customer Support", "side": "", "code": "E01106103", "name": "Cable_Analog Power Common 270", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "LCD Not Working", "side": "", "code": "I8F920002", "name": "Board LNO6 InBody270 CE4th", "msp": 4810.0, "t1": 5610.0, "t2": 6410.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "LCD Not Working", "side": "", "code": "E32003001", "name": "LCD_Panel+Touch 470/380/370S/270", "msp": 7480.0, "t1": 8730.0, "t2": 9970.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "LCD Not Working", "side": "", "code": "I8D312001", "name": "Board DNO2 InBody770", "msp": 49880.0, "t1": 58190.0, "t2": 66510.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "LCD Not Working", "side": "", "code": "E00602009", "name": "Switch RL3-111-H-0-BK/BK-P5", "msp": 540.0, "t1": 630.0, "t2": 720.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Bluetooth/Wifi/Printer Not Working", "side": "", "code": "I8F910001", "name": "Board IF InBody270", "msp": 7690.0, "t1": 8980.0, "t2": 10260.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Bluetooth/Wifi/Printer Not Working", "side": "", "code": "X9S900001", "name": "InBT400-USB", "msp": 2780.0, "t1": 3240.0, "t2": 3710.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Bluetooth/Wifi/Printer Not Working", "side": "", "code": "E01106052", "name": "Cable IF InBody270", "msp": 1930.0, "t1": 2250.0, "t2": 2570.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Bluetooth/Wifi/Printer Not Working", "side": "", "code": "E32206004", "name": "Module_Wifi_AC600 Archer T2U", "msp": 3210.0, "t1": 3740.0, "t2": 4280.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Weight Measurement Issue", "side": "", "code": "I8F908001", "name": "[Assy]Loadcell 270(S)", "msp": 26700.0, "t1": 31150.0, "t2": 35600.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Weight Measurement Issue", "side": "", "code": "I8F813001", "name": "Board Analog InBody270", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10201216", "name": "M_Foot Lower 270(S)", "msp": 30340.0, "t1": 35390.0, "t2": 40450.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10201053", "name": "M_Stand 270(S)", "msp": 18690.0, "t1": 21810.0, "t2": 24920.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10201214", "name": "M_Foot Upper 270(S)", "msp": 14320.0, "t1": 16700.0, "t2": 19090.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301891", "name": "P_Display Front New 470/270(S) Rev.1", "msp": 8550.0, "t1": 9970.0, "t2": 11400.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10201099", "name": "M_Pipe 270(S)", "msp": 4810.0, "t1": 5610.0, "t2": 6410.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301895", "name": "P_Display Back 270(S) Rev.2", "msp": 3530.0, "t1": 4120.0, "t2": 4700.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301293", "name": "P_Key Display Number 270(S)", "msp": 2670.0, "t1": 3120.0, "t2": 3560.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301455", "name": "P_Shoulder Cap 270(S)", "msp": 2030.0, "t1": 2370.0, "t2": 2710.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "R", "code": "I10301239", "name": "P_Shoulder Front R 270(S)/370S/570", "msp": 1930.0, "t1": 2250.0, "t2": 2570.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "L", "code": "I10301240", "name": "P_Shoulder Front L 270(S)/370S/570", "msp": 1930.0, "t1": 2250.0, "t2": 2570.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301187", "name": "P_Hand Upper 270(S)/370S/570", "msp": 1500.0, "t1": 1750.0, "t2": 2000.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301388", "name": "P_Foot Supporter BSM330/BSM370/270(S)/370S/770(S) etc", "msp": 1290.0, "t1": 1500.0, "t2": 1710.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "L", "code": "I10301242", "name": "P_Shoulder Back L 270(S)/370S/570", "msp": 1180.0, "t1": 1380.0, "t2": 1570.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "R", "code": "I10301241", "name": "P_Shoulder Back R 270(S)/370S/570", "msp": 1180.0, "t1": 1380.0, "t2": 1570.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301220", "name": "P_Hand Lower 270(S)/370S/570", "msp": 970.0, "t1": 1130.0, "t2": 1290.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10301433", "name": "P_Foot Case Cover 270(S)", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "L", "code": "I10301478", "name": "P_Shoulder Joint L 270(S)/370S/570", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "", "code": "I10101235", "name": "M_Loadcell Plate BSM330/270(S)/770(S)", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 270", "issue": "Physical Damage", "side": "R", "code": "I10301479", "name": "P_Shoulder Joint R 270(S)/370S/570", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "L", "code": "E31101032", "name": "Cable_Hand LA Red 270S", "msp": 1610.0, "t1": 1870.0, "t2": 2140.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "R", "code": "E31101036", "name": "Cable_Hand RA Black 270S", "msp": 1610.0, "t1": 1870.0, "t2": 2140.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "L", "code": "E31101024", "name": "Cable_Foot LL Blue 270S", "msp": 1610.0, "t1": 1870.0, "t2": 2140.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "R", "code": "E31101028", "name": "Cable_Foot RL Yellow 270S", "msp": 1610.0, "t1": 1870.0, "t2": 2140.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "", "code": "I8U813001", "name": "Board ANO34_INO 270S", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "", "code": "I8U821001", "name": "Board Foot 270S", "msp": 2780.0, "t1": 3240.0, "t2": 3710.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Touch Issue", "side": "", "code": "I8U818001", "name": "Board Hand 270S", "msp": 2780.0, "t1": 3240.0, "t2": 3710.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Customer Support", "side": "", "code": "I8U812001", "name": "Board DNO34 270S", "msp": 57040.0, "t1": 66540.0, "t2": 76050.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Customer Support", "side": "", "code": "I8U813001", "name": "Board ANO34_INO 270S", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Customer Support", "side": "", "code": "E32204004", "name": "Module_SD Card_KIOXIA EXCERIA MicroSD 32GB", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Customer Support", "side": "", "code": "E31109011", "name": "Cable_SATA_0.17m Red", "msp": 1070.0, "t1": 1250.0, "t2": 1430.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Contact Customer Support", "side": "", "code": "E31109009", "name": "Cable_SATA_0.17m Black", "msp": 1070.0, "t1": 1250.0, "t2": 1430.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "LCD Not Working", "side": "", "code": "I8U812001", "name": "Board DNO34 270S", "msp": 57040.0, "t1": 66540.0, "t2": 76050.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "LCD Not Working", "side": "", "code": "E32003001", "name": "LCD_Panel+Touch 470/380/370S/270", "msp": 7480.0, "t1": 8730.0, "t2": 9970.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "LCD Not Working", "side": "", "code": "E32204004", "name": "Module_SD Card_KIOXIA EXCERIA MicroSD 32GB", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "LCD Not Working", "side": "", "code": "E00602009", "name": "Switch RL3-111-H-0-BK/BK-P5", "msp": 540.0, "t1": 630.0, "t2": 720.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "I8U813001", "name": "Board ANO34_INO 270S", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "X9S900001", "name": "InBT400-USB", "msp": 2780.0, "t1": 3240.0, "t2": 3710.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "E32206004", "name": "Module_Wifi_AC600 Archer T2U", "msp": 3210.0, "t1": 3740.0, "t2": 4280.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Weight Measurement Issue", "side": "", "code": "I8F908001", "name": "[Assy]Loadcell 270(S)", "msp": 26700.0, "t1": 31150.0, "t2": 35600.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Weight Measurement Issue", "side": "", "code": "I8U813001", "name": "Board ANO34_INO 270S", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10201216", "name": "M_Foot Lower 270(S)", "msp": 30340.0, "t1": 35390.0, "t2": 40450.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10201053", "name": "M_Stand 270(S)", "msp": 18690.0, "t1": 21810.0, "t2": 24920.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10201214", "name": "M_Foot Upper 270(S)", "msp": 14320.0, "t1": 16700.0, "t2": 19090.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301891", "name": "P_Display Front New 470/270(S) Rev.1", "msp": 8550.0, "t1": 9970.0, "t2": 11400.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10201099", "name": "M_Pipe 270(S)", "msp": 4810.0, "t1": 5610.0, "t2": 6410.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301895", "name": "P_Display Back 270(S) Rev.2", "msp": 3530.0, "t1": 4120.0, "t2": 4700.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301293", "name": "P_Key Display Number 270(S)", "msp": 2670.0, "t1": 3120.0, "t2": 3560.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301455", "name": "P_Shoulder Cap 270(S)", "msp": 2030.0, "t1": 2370.0, "t2": 2710.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "R", "code": "I10301239", "name": "P_Shoulder Front R 270(S)/370S/570", "msp": 1930.0, "t1": 2250.0, "t2": 2570.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "L", "code": "I10301240", "name": "P_Shoulder Front L 270(S)/370S/570", "msp": 1930.0, "t1": 2250.0, "t2": 2570.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301187", "name": "P_Hand Upper 270(S)/370S/570", "msp": 1500.0, "t1": 1750.0, "t2": 2000.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301388", "name": "P_Foot Supporter BSM330/BSM370/270(S)/370S/770(S) etc", "msp": 1290.0, "t1": 1500.0, "t2": 1710.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "L", "code": "I10301242", "name": "P_Shoulder Back L 270(S)/370S/570", "msp": 1180.0, "t1": 1380.0, "t2": 1570.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "R", "code": "I10301241", "name": "P_Shoulder Back R 270(S)/370S/570", "msp": 1180.0, "t1": 1380.0, "t2": 1570.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301220", "name": "P_Hand Lower 270(S)/370S/570", "msp": 970.0, "t1": 1130.0, "t2": 1290.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10301433", "name": "P_Foot Case Cover 270(S)", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "L", "code": "I10301478", "name": "P_Shoulder Joint L 270(S)/370S/570", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "", "code": "I10101235", "name": "M_Loadcell Plate BSM330/270(S)/770(S)", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 270S", "issue": "Physical Damage", "side": "R", "code": "I10301479", "name": "P_Shoulder Joint R 270(S)/370S/570", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "L", "code": "E01101271", "name": "Cable_Electrode_Foot L Blue 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "R", "code": "E01101272", "name": "Cable_Electrode_Foot R Yellow 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "L", "code": "E01101269", "name": "Cable_Electrode_Hand L Red 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "R", "code": "E01101270", "name": "Cable_Electrode_Hand R Black 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "", "code": "I8P913001", "name": "Board ANO6 580/380", "msp": 61410.0, "t1": 71650.0, "t2": 81880.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "", "code": "I8P918001", "name": "Board Hand Electrode 580/380", "msp": 4700.0, "t1": 5490.0, "t2": 6270.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Touch Issue", "side": "", "code": "I8P921001", "name": "Board Foot Electrode 380", "msp": 4700.0, "t1": 5490.0, "t2": 6270.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Customer Support", "side": "", "code": "I8P913001", "name": "Board ANO6 580/380", "msp": 61410.0, "t1": 71650.0, "t2": 81880.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Customer Support", "side": "", "code": "I8I412001", "name": "Board DNO3 BWA(S)/970(S)/770S/580/380", "msp": 57040.0, "t1": 66540.0, "t2": 76050.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Customer Support", "side": "", "code": "E32204004", "name": "Module_SD Card_KIOXIA EXCERIA MicroSD 32GB", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Customer Support", "side": "", "code": "E01106180", "name": "Cable_SATA 1m Black 380", "msp": 1390.0, "t1": 1620.0, "t2": 1860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Contact Customer Support", "side": "", "code": "E01106179", "name": "Cable_SATA 1m Red 380", "msp": 1390.0, "t1": 1620.0, "t2": 1860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "LCD Not Working", "side": "", "code": "I8I412001", "name": "Board DNO3 BWA(S)/970(S)/770S/580/380", "msp": 57040.0, "t1": 66540.0, "t2": 76050.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "LCD Not Working", "side": "", "code": "I8P920001", "name": "Board LNO38 380", "msp": 23180.0, "t1": 27040.0, "t2": 30910.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "LCD Not Working", "side": "", "code": "E32003001", "name": "LCD_Panel+Touch 470/380/370S/270", "msp": 7480.0, "t1": 8730.0, "t2": 9970.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "LCD Not Working", "side": "", "code": "E32204004", "name": "Module_SD Card_KIOXIA EXCERIA MicroSD 32GB", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "I8P913001", "name": "Board ANO6 580/380", "msp": 61410.0, "t1": 71650.0, "t2": 81880.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "X9S900001", "name": "InBT400-USB", "msp": 2780.0, "t1": 3240.0, "t2": 3710.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "E32206004", "name": "Module_Wifi_AC600 Archer T2U", "msp": 3210.0, "t1": 3740.0, "t2": 4280.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "E01106178", "name": "Cable_INO38 580/380", "msp": 3210.0, "t1": 3740.0, "t2": 4280.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Weight Measurement Issue", "side": "", "code": "I8I419003", "name": "Board Loadcell 970(S)/580/380", "msp": 24030.0, "t1": 28040.0, "t2": 32040.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Weight Measurement Issue", "side": "", "code": "E01107003", "name": "Cable_Loadcell 580/380", "msp": 1070.0, "t1": 1250.0, "t2": 1430.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Weight Measurement Issue", "side": "", "code": "I8P908001", "name": "[Assy]LoadCell 380/580", "msp": 0, "t1": 0, "t2": 0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Weight Measurement Issue", "side": "", "code": "I8U813001", "name": "Board ANO34_INO 270S", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10201255", "name": "M_Foot Frame 380", "msp": 47210.0, "t1": 55080.0, "t2": 62950.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301811", "name": "P_Stand Front 380", "msp": 12500.0, "t1": 14580.0, "t2": 16670.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301804", "name": "P_Head Front 380", "msp": 7800.0, "t1": 9100.0, "t2": 10400.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "R", "code": "I10201252", "name": "M_Hand Pipe R 380", "msp": 6840.0, "t1": 7980.0, "t2": 9120.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "L", "code": "I10201253", "name": "M_Hand Pipe L 380", "msp": 6840.0, "t1": 7980.0, "t2": 9120.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10101411", "name": "M_Foot Balance Bracket 380", "msp": 5770.0, "t1": 6730.0, "t2": 7690.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301810", "name": "P_Head Bezel 380", "msp": 5240.0, "t1": 6110.0, "t2": 6980.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301817", "name": "P_Stand Back 380", "msp": 4700.0, "t1": 5490.0, "t2": 6270.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301812", "name": "P_Stand Top Front 380", "msp": 3960.0, "t1": 4620.0, "t2": 5270.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301805", "name": "P_Head Back 380", "msp": 3740.0, "t1": 4370.0, "t2": 4990.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "L", "code": "I10101395", "name": "M_Head Bracket L 380", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "R", "code": "I10101396", "name": "M_Head Bracket R 380", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301835", "name": "P_Hand Upper 580/380", "msp": 2030.0, "t1": 2370.0, "t2": 2710.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301813", "name": "P_Stand Top Back 380", "msp": 1390.0, "t1": 1620.0, "t2": 1860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301824", "name": "P_Shoulder Cover 580/380", "msp": 1290.0, "t1": 1500.0, "t2": 1710.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301834", "name": "P_Hand Lower 580/380", "msp": 860.0, "t1": 1000.0, "t2": 1140.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "L", "code": "I10301828", "name": "P_Shoulder Joint L 580/380", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "R", "code": "I10301827", "name": "P_Shoulder Joint R 580/380", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301822", "name": "P_Shoulder Front 580/380", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301823", "name": "P_Shoulder Back 580/380", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "", "code": "I10301807", "name": "P_Head Module Cover 380", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "R", "code": "I10301825", "name": "P_Shoulder Cap R 380", "msp": 540.0, "t1": 630.0, "t2": 720.0, "gst": 0.05}, {"machine": "InBody 380", "issue": "Physical Damage", "side": "L", "code": "I10301826", "name": "P_Shoulder Cap L 380", "msp": 540.0, "t1": 630.0, "t2": 720.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "L", "code": "E01101271", "name": "Cable_Electrode_Foot L Blue 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "R", "code": "E01101272", "name": "Cable_Electrode_Foot R Yellow 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "L", "code": "E01101269", "name": "Cable_Electrode_Hand L Red 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "R", "code": "E01101270", "name": "Cable_Electrode_Hand R Black 580/380", "msp": 3320.0, "t1": 3870.0, "t2": 4420.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "", "code": "I8P913001", "name": "Board ANO6 580/380", "msp": 61410.0, "t1": 71650.0, "t2": 81880.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "", "code": "I8P918001", "name": "Board Hand Electrode 580/380", "msp": 4700.0, "t1": 5490.0, "t2": 6270.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Touch Issue", "side": "", "code": "I8R621001", "name": "Board Foot Electrode 580", "msp": 4810.0, "t1": 5610.0, "t2": 6410.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Customer Support", "side": "", "code": "I8P913001", "name": "Board ANO6 580/380", "msp": 61410.0, "t1": 71650.0, "t2": 81880.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Customer Support", "side": "", "code": "I8I412001", "name": "Board DNO3 BWA(S)/970(S)/770S/580/380", "msp": 57040.0, "t1": 66540.0, "t2": 76050.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Customer Support", "side": "", "code": "E32204004", "name": "Module_SD Card_KIOXIA EXCERIA MicroSD 32GB", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Customer Support", "side": "", "code": "E01106180", "name": "Cable_SATA 1m Black 380", "msp": 1390.0, "t1": 1620.0, "t2": 1860.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Contact Customer Support", "side": "", "code": "E01106179", "name": "Cable_SATA 1m Red 380", "msp": 1390.0, "t1": 1620.0, "t2": 1860.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "LCD Not Working", "side": "", "code": "I8I412001", "name": "Board DNO3 BWA(S)/970(S)/770S/580/380", "msp": 57040.0, "t1": 66540.0, "t2": 76050.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "LCD Not Working", "side": "", "code": "I8P920001", "name": "Board LNO39 580", "msp": 25000.0, "t1": 29160.0, "t2": 33330.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "LCD Not Working", "side": "", "code": "E32003001", "name": "LCD_Panel+Touch 470/380/370S/270", "msp": 7480.0, "t1": 8730.0, "t2": 9970.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "LCD Not Working", "side": "", "code": "E32204004", "name": "Module_SD Card_KIOXIA EXCERIA MicroSD 32GB", "msp": 2140.0, "t1": 2500.0, "t2": 2850.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "I8P913001", "name": "Board ANO6 580/380", "msp": 61410.0, "t1": 71650.0, "t2": 81880.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "X9S900001", "name": "InBT400-USB", "msp": 2780.0, "t1": 3240.0, "t2": 3710.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "E32206004", "name": "Module_Wifi_AC600 Archer T2U", "msp": 3210.0, "t1": 3740.0, "t2": 4280.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Bluetooth/ Printer Not Working", "side": "", "code": "E01106178", "name": "Cable_INO38 580/380", "msp": 3210.0, "t1": 3740.0, "t2": 4280.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Weight Measurement Issue", "side": "", "code": "I8I419003", "name": "Board Loadcell 970(S)/580/380", "msp": 24030.0, "t1": 28040.0, "t2": 32040.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Weight Measurement Issue", "side": "", "code": "E01107003", "name": "Cable_Loadcell 580/380", "msp": 1070.0, "t1": 1250.0, "t2": 1430.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Weight Measurement Issue", "side": "", "code": "I8P908001", "name": "[Assy]LoadCell 380/580", "msp": 0, "t1": 0, "t2": 0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Weight Measurement Issue", "side": "", "code": "I8U813001", "name": "Board ANO34_INO 270S", "msp": 45390.0, "t1": 52960.0, "t2": 60520.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301871", "name": "P_Foot Case 580", "msp": 35680.0, "t1": 41620.0, "t2": 47570.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301865", "name": "P_Stand Front 580", "msp": 24030.0, "t1": 28040.0, "t2": 32040.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301864", "name": "P_Head Bezel 580", "msp": 15170.0, "t1": 17700.0, "t2": 20230.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301858", "name": "P_Head Front 580", "msp": 9830.0, "t1": 11470.0, "t2": 13110.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "R", "code": "I10201246", "name": "M_Hand Pipe R 580", "msp": 7270.0, "t1": 8480.0, "t2": 9690.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "L", "code": "I10201247", "name": "M_Hand Pipe L 580", "msp": 7270.0, "t1": 8480.0, "t2": 9690.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301867", "name": "P_Stand Back 580", "msp": 6310.0, "t1": 7360.0, "t2": 8410.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301866", "name": "P_Stand Top Front 580", "msp": 5130.0, "t1": 5990.0, "t2": 6840.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301859", "name": "P_Head Back 580", "msp": 4280.0, "t1": 4990.0, "t2": 5700.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301835", "name": "P_Hand Upper 580/380", "msp": 2030.0, "t1": 2370.0, "t2": 2710.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301824", "name": "P_Shoulder Cover 580/380", "msp": 1290.0, "t1": 1500.0, "t2": 1710.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301870", "name": "P_Shoulder Cap 580", "msp": 1070.0, "t1": 1250.0, "t2": 1430.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301834", "name": "P_Hand Lower 580/380", "msp": 860.0, "t1": 1000.0, "t2": 1140.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "L", "code": "I10301828", "name": "P_Shoulder Joint L 580/380", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "R", "code": "I10301827", "name": "P_Shoulder Joint R 580/380", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301822", "name": "P_Shoulder Front 580/380", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301823", "name": "P_Shoulder Back 580/380", "msp": 650.0, "t1": 750.0, "t2": 860.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301862", "name": "P_Head Module Cover 580", "msp": 540.0, "t1": 630.0, "t2": 720.0, "gst": 0.05}, {"machine": "InBody 580", "issue": "Physical Damage", "side": "", "code": "I10301832", "name": "P_Shoulder T Washer POM 580/380", "msp": 330.0, "t1": 380.0, "t2": 430.0, "gst": 0.05}, {"machine": "InBody 120", "issue": "Error Code \"Err 2\"", "side": "", "code": "I8F310002", "name": "Board IF 120 CE4th", "msp": 16990.0, "t1": 19820.0, "t2": 22650.0, "gst": 0.05}, {"machine": "InBody 120", "issue": "Error Code \"Err 2\"", "side": "", "code": "H8Q308001", "name": "[Assy]LoadCell 1.5mm 120/H20B/H30/H40/Fit etc", "msp": 1820.0, "t1": 2120.0, "t2": 2430.0, "gst": 0.05}, {"machine": "InBody 120", "issue": "Error Code \"Err 2\"", "side": "", "code": "H8G516001", "name": "[Assy]Foot Supporter H20/120", "msp": 750.0, "t1": 880.0, "t2": 1000.0, "gst": 0.05}, {"machine": "InBody 120", "issue": "Error Code \"S00A, S20A, S21A, S12A, S13A\"", "side": "", "code": "I8F300002", "name": "Board Main 120 CE4th", "msp": 22330.0, "t1": 26050.0, "t2": 29770.0, "gst": 0.05}, {"machine": "InBody 120", "issue": "Error Code \"S00A, S20A, S21A, S12A, S13A\"", "side": "", "code": "E01101257", "name": "Cable Hand 120 Rev.1", "msp": 3000.0, "t1": 3490.0, "t2": 3990.0, "gst": 0.05}, {"machine": "InBody 120", "issue": "Error Code \"S00A, S20A, S21A, S12A, S13A\"", "side": "", "code": "I8F310002", "name": "Board IF 120 CE4th", "msp": 16990.0, "t1": 19820.0, "t2": 22650.0, "gst": 0.05}];
+const machineSelect = document.getElementById('machineSelect');
+const issueSelect = document.getElementById('issueSelect');
+const sideSelect = document.getElementById('sideSelect');
+const searchInput = document.getElementById('searchInput');
+const serviceBody = document.getElementById('serviceBody');
+const partsBody = document.getElementById('partsBody');
+const selectedCount = document.getElementById('selectedCount');
+const mspTotal = document.getElementById('mspTotal');
+const t1Total = document.getElementById('t1Total');
+const t2Total = document.getElementById('t2Total');
+const statusText = document.getElementById('statusText');
 
-      // ---- NOTE ----
-      // Your sheet has 181 rows. For brevity in this chat, only the first few are shown.
-      // Replace PARTS with the full dataset (all rows) for complete functionality.
-    ];
+function fmt(v) { return '₹ ' + Math.round(v).toLocaleString('en-IN'); }
+function unique(arr) { return [...new Set(arr)]; }
 
-    // ====== Helpers ======
-    const fmtINR = (n) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(Number(n || 0));
-    const el = (id) => document.getElementById(id);
+const SERVICE_ITEMS = DATA.filter(x => x.machine === 'All models' && x.issue === 'Basic Service' && Number(x.gst || 0) >= 0.18);
 
-    function uniq(arr) { return [...new Set(arr)].filter(x => x !== undefined && x !== null && String(x).trim() !== ""); }
+function renderServiceItems(autoSelect=true) {
+  if (!SERVICE_ITEMS.length) {
+    serviceBody.innerHTML = '<tr><td colspan="6" class="empty">No service items available.</td></tr>';
+    updateTotals();
+    return;
+  }
+  serviceBody.innerHTML = SERVICE_ITEMS.map((p, idx) => `
+    <tr>
+      <td><input type="checkbox" class="service-check" data-m="${p.msp}" data-t1="${p.t1}" data-t2="${p.t2}" data-g="${p.gst}" ${autoSelect && idx === 0 ? 'checked' : ''}></td>
+      <td><strong>${p.name}</strong><span class="sub">Common service item · applies across machine categories</span></td>
+      <td><span class="pill">${Math.round(p.gst * 100)}%</span></td>
+      <td class="num">${Math.round(p.msp).toLocaleString('en-IN')}</td>
+      <td class="num">${Math.round(p.t1).toLocaleString('en-IN')}</td>
+      <td class="num">${Math.round(p.t2).toLocaleString('en-IN')}</td>
+    </tr>
+  `).join('');
+  document.querySelectorAll('.service-check').forEach(cb => cb.addEventListener('change', updateTotals));
+}
 
-    function currentPriceKey() {
-      const checked = document.querySelector('input[name="priceMode"]:checked');
-      return checked ? checked.value : "Tier1_MSP";
-    }
+function initMachines() {
+  machineSelect.innerHTML = '<option value="">-- Choose Category --</option>' +
+    ["All models", "InBody 270", "InBody 270S", "InBody 380", "InBody 580", "InBody 120"].map(v => `<option value="${v}">${v}</option>`).join('');
+  issueSelect.innerHTML = '<option value="">-- Select Machine First --</option>';
+  sideSelect.innerHTML = '<option value="ALL">All</option>';
+}
 
-    function getUnitPrice(part) {
-      const k = currentPriceKey();
-      const v = part[k];
-      return (typeof v === "number" && !Number.isNaN(v)) ? v : 0;
-    }
+function populateIssues() {
+  const machine = machineSelect.value;
+  searchInput.value = '';
+  if (!machine) {
+    issueSelect.disabled = true;
+    sideSelect.disabled = true;
+    issueSelect.innerHTML = '<option value="">-- Select Machine First --</option>';
+    sideSelect.innerHTML = '<option value="ALL">All</option>';
+    renderParts([]);
+    statusText.textContent = 'Choose a machine to begin.';
+    return;
+  }
+  const issues = unique(DATA.filter(x => x.machine === machine).map(x => x.issue));
+  issueSelect.disabled = false;
+  issueSelect.innerHTML = '<option value="">-- Choose Reported Issue --</option>' + issues.map(v => `<option value="${v}">${v}</option>`).join('');
+  sideSelect.disabled = true;
+  sideSelect.innerHTML = '<option value="ALL">All</option>';
+  renderParts([]);
+  statusText.textContent = `${issues.length} issue options loaded.`;
+}
 
-    function partKey(part) {
-      // Stable key even if item code blank
-      return [
-        part.Machine, part.Package, part.R_or_L || "",
-        part.Item_Code || "", part.Spare_Parts || ""
-      ].join("||");
-    }
+function populateSidesAndParts() {
+  const machine = machineSelect.value;
+  const issue = issueSelect.value;
+  searchInput.value = '';
+  if (!machine || !issue) {
+    sideSelect.disabled = true;
+    sideSelect.innerHTML = '<option value="ALL">All</option>';
+    renderParts([]);
+    statusText.textContent = machine ? 'Choose an issue to load parts.' : 'Choose a machine to begin.';
+    return;
+  }
+  const parts = DATA.filter(x => x.machine === machine && x.issue === issue);
+  const sides = unique(parts.map(x => x.side || 'NA')).filter(Boolean);
+  sideSelect.disabled = false;
+  sideSelect.innerHTML = '<option value="ALL">All</option>' + sides.map(v => `<option value="${v}">${v}</option>`).join('');
+  renderParts(parts, true);
+  statusText.textContent = `${parts.length} parts loaded for ${issue}.`;
+}
 
-    // ====== State ======
-    const cart = new Map(); // key -> {part, qty}
+function getFilteredParts() {
+  const machine = machineSelect.value;
+  const issue = issueSelect.value;
+  const side = sideSelect.value;
+  const q = searchInput.value.trim().toLowerCase();
+  let parts = DATA.filter(x => (!machine || x.machine === machine) && (!issue || x.issue === issue));
+  if (side && side !== 'ALL') parts = parts.filter(x => (x.side || 'NA') === side);
+  if (q) parts = parts.filter(x => x.name.toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q));
+  return parts;
+}
 
-    // ====== UI Build ======
-    function populateMachineDropdown() {
-      const machines = uniq(PARTS.map(p => p.Machine)).sort((a,b)=>a.localeCompare(b));
-      const sel = el("machineSelect");
-      sel.innerHTML = "";
-      sel.appendChild(new Option("All", "__ALL__"));
-      machines.forEach(m => sel.appendChild(new Option(m, m)));
-    }
+function renderParts(parts, autoSelect=true) {
+  if (!parts.length) {
+    partsBody.innerHTML = '<tr><td colspan="7" class="empty">No parts to display for the current selection.</td></tr>';
+    updateTotals();
+    return;
+  }
+  partsBody.innerHTML = parts.map((p, idx) => `
+    <tr>
+      <td><input type="checkbox" class="part-check" data-m="${p.msp}" data-t1="${p.t1}" data-t2="${p.t2}" data-g="${p.gst}" ${autoSelect ? 'checked' : ''}></td>
+      <td><span class="pill">${p.side || 'NA'}</span></td>
+      <td><strong>${p.name}</strong><span class="sub">${p.code || 'No item code'} · ${p.machine} · ${p.issue}</span></td>
+      <td><span class="pill">${Math.round(p.gst * 100)}%</span></td>
+      <td class="num">${Math.round(p.msp).toLocaleString('en-IN')}</td>
+      <td class="num">${Math.round(p.t1).toLocaleString('en-IN')}</td>
+      <td class="num">${Math.round(p.t2).toLocaleString('en-IN')}</td>
+    </tr>
+  `).join('');
+  document.querySelectorAll('.part-check').forEach(cb => cb.addEventListener('change', updateTotals));
+  updateTotals();
+}
 
-    function populatePackageDropdown() {
-      const machine = el("machineSelect").value;
-      const filtered = (machine === "__ALL__") ? PARTS : PARTS.filter(p => p.Machine === machine);
-      const packages = uniq(filtered.map(p => p.Package)).sort((a,b)=>a.localeCompare(b));
-      const sel = el("packageSelect");
-      sel.innerHTML = "";
-      sel.appendChild(new Option("All", "__ALL__"));
-      packages.forEach(pk => sel.appendChild(new Option(pk, pk)));
-    }
+function applySearchAndSide() {
+  const machine = machineSelect.value;
+  const issue = issueSelect.value;
+  if (!machine || !issue) return;
+  renderParts(getFilteredParts(), true);
+  statusText.textContent = `${getFilteredParts().length} visible parts after filters.`;
+}
 
-    function filteredParts() {
-      const machine = el("machineSelect").value;
-      const pack = el("packageSelect").value;
-      const q = el("searchInput").value.trim().toLowerCase();
+function updateTotals() {
+  let count = 0, msp = 0, t1 = 0, t2 = 0;
+  document.querySelectorAll('.service-check:checked, .part-check:checked').forEach(cb => {
+    const g = 1 + parseFloat(cb.dataset.g || '0');
+    count += 1;
+    msp += parseFloat(cb.dataset.m || '0') * g;
+    t1 += parseFloat(cb.dataset.t1 || '0') * g;
+    t2 += parseFloat(cb.dataset.t2 || '0') * g;
+  });
+  selectedCount.textContent = count.toLocaleString('en-IN');
+  mspTotal.textContent = fmt(msp);
+  t1Total.textContent = fmt(t1);
+  t2Total.textContent = fmt(t2);
+}
 
-      return PARTS.filter(p => {
-        if (machine !== "__ALL__" && p.Machine !== machine) return false;
-        if (pack !== "__ALL__" && p.Package !== pack) return false;
-        if (q) {
-          const hay = `${p.Spare_Parts} ${p.Item_Code} ${p.R_or_L}`.toLowerCase();
-          if (!hay.includes(q)) return false;
-        }
-        return true;
-      });
-    }
+machineSelect.addEventListener('change', populateIssues);
+issueSelect.addEventListener('change', populateSidesAndParts);
+sideSelect.addEventListener('change', applySearchAndSide);
+searchInput.addEventListener('input', applySearchAndSide);
 
-    function renderPartsTable() {
-      const tbody = el("partsTbody");
-      const rows = filteredParts();
+document.getElementById('selectAllBtn').addEventListener('click', () => {
+  document.querySelectorAll('.part-check').forEach(cb => cb.checked = true);
+  updateTotals();
+});
 
-      el("partsCount").textContent = `(${rows.length} items)`;
-      el("priceModeLabel").textContent = currentPriceKey().replaceAll("_"," ");
+document.getElementById('deselectAllBtn').addEventListener('click', () => {
+  document.querySelectorAll('.part-check').forEach(cb => cb.checked = false);
+  updateTotals();
+});
 
-      tbody.innerHTML = "";
-      rows.forEach(p => {
-        const tr = document.createElement("tr");
+document.getElementById('resetBtn').addEventListener('click', () => {
+  machineSelect.value = '';
+  issueSelect.value = '';
+  sideSelect.value = 'ALL';
+  searchInput.value = '';
+  initMachines();
+  renderServiceItems(true);
+  renderParts([]);
+  updateTotals();
+  statusText.textContent = 'Filters cleared.';
+});
 
-        const tdRL = document.createElement("td");
-        tdRL.textContent = p.R_or_L || "-";
-        tdRL.className = "muted";
-
-        const tdCode = document.createElement("td");
-        tdCode.textContent = p.Item_Code || "-";
-        tdCode.className = "muted";
-
-        const tdName = document.createElement("td");
-        tdName.innerHTML = `<div><b>${escapeHtml(p.Spare_Parts || "")}</b></div>
-                            <div class="muted" style="margin-top:2px">${escapeHtml(p.Machine)} • ${escapeHtml(p.Package)}</div>`;
-
-        const tdPrice = document.createElement("td");
-        tdPrice.textContent = fmtINR(getUnitPrice(p));
-
-        const tdBtn = document.createElement("td");
-        const btn = document.createElement("button");
-        btn.className = "btn primary";
-        btn.textContent = "Add";
-        btn.onclick = () => addToCart(p);
-        tdBtn.appendChild(btn);
-
-        tr.appendChild(tdRL);
-        tr.appendChild(tdCode);
-        tr.appendChild(tdName);
-        tr.appendChild(tdPrice);
-        tr.appendChild(tdBtn);
-        tbody.appendChild(tr);
-      });
-    }
-
-    function addToCart(part) {
-      const k = partKey(part);
-      const existing = cart.get(k);
-      if (existing) existing.qty += 1;
-      else cart.set(k, { part, qty: 1 });
-      renderCart();
-    }
-
-    function renderCart() {
-      const tbody = el("cartTbody");
-      tbody.innerHTML = "";
-
-      const items = [...cart.values()];
-      el("cartCount").textContent = `(${items.length} lines)`;
-
-      items.forEach(({part, qty}) => {
-        const tr = document.createElement("tr");
-
-        const tdItem = document.createElement("td");
-        const label = `${part.Spare_Parts || ""}${part.Item_Code ? " ("+part.Item_Code+")" : ""}${part.R_or_L ? " • "+part.R_or_L : ""}`;
-        tdItem.innerHTML = `<div><b>${escapeHtml(label)}</b></div>
-                            <div class="muted" style="margin-top:2px">${escapeHtml(part.Machine)} • ${escapeHtml(part.Package)}</div>`;
-
-        const tdQty = document.createElement("td");
-        const qtyInput = document.createElement("input");
-        qtyInput.type = "number";
-        qtyInput.min = "1";
-        qtyInput.step = "1";
-        qtyInput.value = String(qty);
-        qtyInput.oninput = () => {
-          const v = Math.max(1, Math.floor(Number(qtyInput.value || 1)));
-          qtyInput.value = String(v);
-          cart.get(partKey(part)).qty = v;
-          renderTotals();
-          // also update line total cell:
-          tdLine.textContent = fmtINR(v * getUnitPrice(part));
-        };
-        tdQty.appendChild(qtyInput);
-
-        const tdUnit = document.createElement("td");
-        tdUnit.textContent = fmtINR(getUnitPrice(part));
-
-        const tdLine = document.createElement("td");
-        tdLine.textContent = fmtINR(qty * getUnitPrice(part));
-
-        const tdDel = document.createElement("td");
-        const del = document.createElement("button");
-        del.className = "btn danger";
-        del.textContent = "×";
-        del.title = "Remove";
-        del.onclick = () => {
-          cart.delete(partKey(part));
-          renderCart();
-        };
-        tdDel.appendChild(del);
-
-        tr.appendChild(tdItem);
-        tr.appendChild(tdQty);
-        tr.appendChild(tdUnit);
-        tr.appendChild(tdLine);
-        tr.appendChild(tdDel);
-        tbody.appendChild(tr);
-      });
-
-      renderTotals();
-    }
-
-    function renderTotals() {
-      let subtotal = 0;
-      for (const {part, qty} of cart.values()) subtotal += qty * getUnitPrice(part);
-
-      const gstPct = Number(el("gstInput").value || 0);
-      const gst = subtotal * (gstPct / 100);
-      const total = subtotal + gst;
-
-      el("subTotal").textContent = fmtINR(subtotal);
-      el("gstAmt").textContent = fmtINR(gst);
-      el("grandTotal").textContent = fmtINR(total);
-    }
-
-    function clearCart() {
-      cart.clear();
-      renderCart();
-    }
-
-    function downloadQuoteCSV() {
-      const priceKey = currentPriceKey();
-      const gstPct = Number(el("gstInput").value || 0);
-
-      const lines = [];
-      lines.push([
-        "Machine","Package","R/L","Item Code","Spare Part",
-        "Qty","Price Column","Unit Price","Line Total"
-      ].join(","));
-
-      let subtotal = 0;
-
-      for (const {part, qty} of cart.values()) {
-        const unit = getUnitPrice(part);
-        const line = qty * unit;
-        subtotal += line;
-
-        lines.push([
-          csv(part.Machine),
-          csv(part.Package),
-          csv(part.R_or_L || ""),
-          csv(part.Item_Code || ""),
-          csv(part.Spare_Parts || ""),
-          qty,
-          csv(priceKey),
-          unit,
-          line
-        ].join(","));
-      }
-
-      const gst = subtotal * (gstPct / 100);
-      const total = subtotal + gst;
-
-      lines.push("");
-      lines.push(`Subtotal,,,,,,,${subtotal}`);
-      lines.push(`GST % (${gstPct}) ,,,,,,,${gst}`);
-      lines.push(`Grand Total,,,,,,,${total}`);
-
-      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `spare_parts_quote_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-    }
-
-    // ====== Small utilities ======
-    function escapeHtml(s) {
-      return String(s ?? "")
-        .replaceAll("&","&amp;").replaceAll("<","&lt;")
-        .replaceAll(">","&gt;").replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function csv(s) {
-      const str = String(s ?? "");
-      if (/[,"\n]/.test(str)) return `"${str.replaceAll('"','""')}"`;
-      return str;
-    }
-
-    // ====== Events ======
-    function wireEvents() {
-      el("machineSelect").addEventListener("change", () => {
-        populatePackageDropdown();
-        renderPartsTable();
-      });
-
-      el("packageSelect").addEventListener("change", renderPartsTable);
-      el("searchInput").addEventListener("input", renderPartsTable);
-
-      document.querySelectorAll('input[name="priceMode"]').forEach(r => {
-        r.addEventListener("change", () => {
-          renderPartsTable();
-          renderCart(); // refresh unit prices in cart
-        });
-      });
-
-      el("gstInput").addEventListener("input", renderTotals);
-      el("clearCartBtn").addEventListener("click", clearCart);
-      el("downloadBtn").addEventListener("click", downloadQuoteCSV);
-    }
-
-    // ====== Init ======
-    (function init() {
-      populateMachineDropdown();
-      populatePackageDropdown();
-      wireEvents();
-      renderPartsTable();
-      renderCart();
-    })();
-  </script>
+initMachines();
+renderServiceItems(true);
+updateTotals();
+</script>
 </body>
 </html>

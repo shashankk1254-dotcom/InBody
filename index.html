@@ -1,97 +1,152 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Link Page</title>
+    <title>Spare Parts Calculator</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            text-align: center;
+            padding: 30px;
+        }
 
-<style>
+        .box {
+            background: white;
+            padding: 20px;
+            width: 350px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
 
-*{
-    box-sizing: border-box;
-}
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
 
-body{
-    margin:0;
-    font-family: Arial, sans-serif;
-    background-color:#f2f2f2;
-    text-align:center;
-    padding:20px 15px;
-}
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
 
-h1{
-    color:#333;
-    margin-bottom:20px;
-}
+        .cart {
+            margin-top: 20px;
+            text-align: left;
+        }
 
-.container{
-    width:100%;
-    max-width:400px;
-    margin:auto;
-}
-
-.link-button{
-    display:block;
-    width:100%;
-    padding:16px;
-    margin:12px 0;
-    background-color:#007BFF;
-    color:white;
-    text-decoration:none;
-    border-radius:10px;
-    font-size:18px;
-    font-weight:500;
-}
-
-.link-button:hover{
-    background-color:#0056b3;
-}
-
-/* Extra small screens (older iphones / small android) */
-
-@media (max-width:380px){
-    .link-button{
-        font-size:16px;
-        padding:14px;
-    }
-}
-
-/* Larger phones */
-
-@media (min-width:600px){
-    .container{
-        max-width:450px;
-    }
-}
-
-</style>
-
+        .total {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>My Links</h1>
+<div class="box">
+    <h2>Spare Calculator</h2>
 
-<div class="container">
+    <!-- Device -->
+    <select id="device">
+        <option>Select Device</option>
+        <option>InBody 270</option>
+        <option>InBody 380</option>
+        <option>InBody 580</option>
+    </select>
 
-<a href="https://inbodychat.kr/simulator/0" class="link-button">Simulator</a>
+    <!-- Issue -->
+    <select id="issue">
+        <option>Select Issue</option>
+        <option>Power Issue</option>
+        <option>Display Issue</option>
+        <option>Printer Issue</option>
+    </select>
 
-<a href="https://india.inbodychat.kr/ts" class="link-button">TS chatbot</a>
+    <!-- Sub Issue -->
+    <select id="subissue">
+        <option>Select Sub Issue</option>
+        <option>No Power</option>
+        <option>Flickering Screen</option>
+        <option>Printer Not Working</option>
+    </select>
 
-<a href="https://inbodykr-my.sharepoint.com/:f:/g/personal/shashank_m_inbody_com/IgA8XA4QdQxERp-NUv_n6k0KAZoNCVMM7KGU2lrJ46dESuA?e=quE6v0"  class="link-button">Mannual</a>
-    
-<a href="https://india.inbodychat.kr/cs" class="link-button">CS chatbot</a>
-    
-<a href="https://inbodylibrary.com/" class="link-button">Image pool</a>
-    
-<a href="https://gm.weareinbody.com/" class="link-button">GM site</a>
-    
-<a href="calc.html" class="link-button">Spare Parts Calculator</a>
+    <!-- Tier -->
+    <select id="tier">
+        <option>Select Tier</option>
+        <option value="1">Tier 1</option>
+        <option value="2">Tier 2</option>
+        <option value="3">Tier 3</option>
+    </select>
 
+    <button onclick="addToCart()">Add to Cart</button>
+
+    <div class="cart">
+        <h3>Cart</h3>
+        <ul id="cartList"></ul>
+        <div class="total" id="total">Total: ₹0</div>
+    </div>
 </div>
+
+<script>
+let cart = [];
+let total = 0;
+
+// Dummy pricing logic (replace with Excel later)
+function getSpare(issue, subissue) {
+    if(issue === "Power Issue" && subissue === "No Power") {
+        return { name: "SMPS Board", price: 2000 };
+    }
+    if(issue === "Display Issue") {
+        return { name: "Display Panel", price: 3500 };
+    }
+    if(issue === "Printer Issue") {
+        return { name: "Printer Module", price: 2500 };
+    }
+    return { name: "Unknown Spare", price: 0 };
+}
+
+function addToCart() {
+    let device = document.getElementById("device").value;
+    let issue = document.getElementById("issue").value;
+    let subissue = document.getElementById("subissue").value;
+    let tier = document.getElementById("tier").value;
+
+    let spare = getSpare(issue, subissue);
+
+    // Tier multiplier
+    let multiplier = 1;
+    if(tier == 2) multiplier = 1.2;
+    if(tier == 3) multiplier = 1.5;
+
+    let finalPrice = spare.price * multiplier;
+
+    cart.push({
+        device,
+        spare: spare.name,
+        price: finalPrice
+    });
+
+    total += finalPrice;
+
+    renderCart();
+}
+
+function renderCart() {
+    let list = document.getElementById("cartList");
+    list.innerHTML = "";
+
+    cart.forEach(item => {
+        let li = document.createElement("li");
+        li.innerText = item.spare + " - ₹" + item.price;
+        list.appendChild(li);
+    });
+
+    document.getElementById("total").innerText = "Total: ₹" + total.toFixed(2);
+}
+</script>
 
 </body>
 </html>
-
-
-

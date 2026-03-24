@@ -1,251 +1,117 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Spare Parts Calculator</title>
-
-<style>
-body {
-    font-family: "Segoe UI", sans-serif;
-    background: #f5f6f8;
-    margin: 0;
-}
-
-.app {
-    max-width: 900px;
-    margin: 30px auto;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    overflow: hidden;
-}
-
-.header {
-    padding: 20px;
-    background: #f0f3f8;
-    text-align: center;
-    font-weight: 600;
-}
-
-.section {
-    padding: 20px;
-    border-bottom: 1px solid #eee;
-}
-
-/* DEVICE SELECT */
-select {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    margin-top: 10px;
-}
-
-/* ISSUE LIST */
-.issue-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.issue {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #fafafa;
-}
-
-.issue.active {
-    background: #e6ecf5;
-    border-color: #2c3e50;
-}
-
-/* TABLE */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-th, td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
-}
-
-.part-name {
-    text-align: left;
-}
-
-/* SUMMARY */
-.summary {
-    background: #fafafa;
-    padding: 20px;
-}
-
-.total {
-    font-size: 20px;
-    font-weight: bold;
-}
-</style>
-</head>
-
-<body>
-
-<div class="app">
-
-<div class="header">Spare Parts Calculator</div>
-
-<!-- STEP 1 -->
-<div class="section">
-<label>Select Model</label>
-<select id="device" onchange="loadIssues()"></select>
-</div>
-
-<!-- STEP 2 -->
-<div class="section">
-<label>Reported Issue</label>
-<div class="issue-list" id="issues"></div>
-</div>
-
-<!-- STEP 3 -->
-<div class="section" id="partsSection" style="display:none;">
-<label>Frequent Spare Parts</label>
-
-<table>
-<thead>
-<tr>
-<th>✔</th>
-<th>Part</th>
-<th>GST</th>
-<th>T1</th>
-<th>T2</th>
-</tr>
-</thead>
-<tbody id="parts"></tbody>
-</table>
-</div>
-
-<!-- SUMMARY -->
-<div class="summary">
-<div class="total" id="total">₹ 0</div>
-</div>
-
-</div>
-
 <script>
 
-// 🔥 DATA (expand this)
-const DB = {
-"All Models": {
-    "Service": [
-        {n:"Service Charge", t1:3500, t2:4000, g:0.18},
-        {n:"Calibration", t1:3000, t2:4000, g:0.18}
-    ]
-},
-
-"InBody 270": {
-    "LCD Not Working": [
-        {n:"LCD Panel", t1:8730, t2:9970, g:0.05},
-        {n:"Display Cable", t1:880, t2:1000, g:0.05}
-    ],
-    "Weight Issue": [
-        {n:"Loadcell", t1:31150, t2:35600, g:0.05}
-    ]
-},
-
-"InBody 580": {
-    "LCD Not Working": [
-        {n:"Board LNO39", t1:29160, t2:33330, g:0.05}
-    ]
-}
-};
-
-let selectedDevice = "";
-let selectedIssue = "";
+const cSelect = document.getElementById('catSelect');
 
 // INIT
-function init() {
-    const devices = Object.keys(DB).filter(d => d !== "All Models");
-    device.innerHTML = '<option>Select Model</option>';
-    devices.forEach(d => device.innerHTML += `<option>${d}</option>`);
-}
-init();
+Object.keys(masterDB).forEach(cat => {
+    if(cat !== "All models"){
+        cSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+    }
+});
 
-// LOAD ISSUES
-function loadIssues() {
-    selectedDevice = device.value;
-    const container = document.getElementById("issues");
-    container.innerHTML = "";
+// STEP 1 → LOAD ISSUES
+function updateIssues() {
+    const cat = cSelect.value;
+    const grid = document.getElementById('issueGrid');
 
-    Object.keys(DB[selectedDevice] || {}).forEach(issue => {
-        container.innerHTML += `
-            <div class="issue" onclick="selectIssue('${issue}', this)">
-                ${issue}
-            </div>
-        `;
+    grid.innerHTML = '';
+    partsSection.style.display = 'none';
+
+    if (!cat) {
+        issueSection.style.display = 'none';
+        return;
+    }
+
+    issueSection.style.display = 'block';
+
+    Object.keys(masterDB[cat]).forEach(issue => {
+        const el = document.createElement('div');
+        el.className = 'btn-issue';
+        el.innerText = issue;
+
+        el.onclick = () => selectIssue(cat, issue, el);
+
+        grid.appendChild(el);
     });
 
-    partsSection.style.display = "none";
+    resetTotals();
 }
 
-// SELECT ISSUE
-function selectIssue(issue, el) {
-    selectedIssue = issue;
-
-    document.querySelectorAll('.issue').forEach(e => e.classList.remove('active'));
+// STEP 2 → SELECT ISSUE
+function selectIssue(cat, issue, el) {
+    document.querySelectorAll('.btn-issue').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
 
-    loadParts();
+    loadParts(cat, issue);
 }
 
-// LOAD PARTS
-function loadParts() {
-    const parts = [
-        ...(DB["All Models"]["Service"]),
-        ...(DB[selectedDevice][selectedIssue])
-    ];
+// STEP 3 → LOAD PARTS (MERGED WITH SERVICE)
+function loadParts(cat, issue) {
+    partsSection.style.display = 'block';
 
-    const tbody = document.getElementById("parts");
-    tbody.innerHTML = "";
+    const tbody = document.getElementById('pBody');
+    tbody.innerHTML = '';
+
+    const parts = [
+        ...(masterDB["All models"]?.["Basic Service"] || []),
+        ...(masterDB[cat]?.[issue] || [])
+    ];
 
     parts.forEach(p => {
         tbody.innerHTML += `
-            <tr>
-                <td><input type="checkbox" checked class="cb"
-                    data-t1="${p.t1}"
-                    data-t2="${p.t2}"
-                    data-g="${p.g}"
-                    onchange="calc()"></td>
-                <td class="part-name">${p.n}</td>
-                <td>${p.g*100}%</td>
-                <td>${p.t1}</td>
-                <td>${p.t2}</td>
-            </tr>
-        `;
+        <tr>
+            <td>
+                <input type="checkbox" checked class="c-cb"
+                data-m="${safe(p.m)}"
+                data-t1="${safe(p.t1)}"
+                data-t2="${safe(p.t2)}"
+                data-g="${safe(p.g)}"
+                onchange="calc()">
+            </td>
+            <td class="part-name">
+                ${p.n}
+                <small>${p.c || "-"}</small>
+            </td>
+            <td><span class="gst-badge">${(p.g*100)||0}%</span></td>
+            <td>${format(p.m)}</td>
+            <td style="color:#003399;font-weight:bold">${format(p.t1)}</td>
+            <td>${format(p.t2)}</td>
+        </tr>`;
     });
 
-    partsSection.style.display = "block";
     calc();
 }
 
 // CALCULATION
 function calc() {
-    let total = 0;
+    let m = 0, t1 = 0, t2 = 0;
 
-    document.querySelectorAll('.cb:checked').forEach(c => {
-        const price = parseFloat(c.dataset.t1);
-        const gst = 1 + parseFloat(c.dataset.g);
-        total += price * gst;
+    document.querySelectorAll('.c-cb:checked').forEach(c => {
+        const gst = 1 + parseFloat(c.dataset.g || 0);
+
+        m += parseFloat(c.dataset.m || 0) * gst;
+        t1 += parseFloat(c.dataset.t1 || 0) * gst;
+        t2 += parseFloat(c.dataset.t2 || 0) * gst;
     });
 
-    document.getElementById("total").innerText =
-        "₹ " + Math.round(total).toLocaleString();
+    document.getElementById('resMSP').innerText = '₹ ' + format(Math.round(m));
+    document.getElementById('resT1').innerText = '₹ ' + format(Math.round(t1));
+    document.getElementById('resT2').innerText = '₹ ' + format(Math.round(t2));
+}
+
+// HELPERS
+function format(x){
+    return Number(x || 0).toLocaleString();
+}
+
+function safe(x){
+    return x || 0;
+}
+
+function resetTotals(){
+    document.getElementById('resMSP').innerText = '₹ 0';
+    document.getElementById('resT1').innerText = '₹ 0';
+    document.getElementById('resT2').innerText = '₹ 0';
 }
 
 </script>
-
-</body>
-</html>

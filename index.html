@@ -17,95 +17,78 @@ body {
     background: white;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    overflow: hidden;
 }
 
-/* HEADER */
 .header {
     padding: 20px;
+    background: #f0f3f8;
     text-align: center;
     font-weight: 600;
+}
+
+.section {
+    padding: 20px;
     border-bottom: 1px solid #eee;
 }
 
-/* DEVICE PILLS */
-.device-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 20px;
+/* DEVICE SELECT */
+select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-top: 10px;
 }
 
-.device-pill {
-    padding: 8px 14px;
-    border-radius: 20px;
-    background: #eef2f7;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.device-pill.active {
-    background: #2c3e50;
-    color: white;
-}
-
-/* ISSUE CARDS */
+/* ISSUE LIST */
 .issue-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 10px;
-    padding: 0 20px 20px;
+    margin-top: 10px;
 }
 
-.issue-card {
-    padding: 14px;
-    border-radius: 10px;
-    border: 1px solid #eee;
+.issue {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
     cursor: pointer;
     background: #fafafa;
 }
 
-.issue-card.active {
+.issue.active {
+    background: #e6ecf5;
     border-color: #2c3e50;
-    background: #eef2f7;
 }
 
-/* PARTS */
-.parts {
-    padding: 20px;
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
 }
 
-.part {
-    display: flex;
-    justify-content: space-between;
+th, td {
     padding: 10px;
     border-bottom: 1px solid #eee;
+    text-align: center;
 }
 
-/* CART */
-.cart {
+.part-name {
+    text-align: left;
+}
+
+/* SUMMARY */
+.summary {
     background: #fafafa;
     padding: 20px;
-    border-top: 1px solid #eee;
-}
-
-.cart-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-button {
-    padding: 4px 8px;
-    border: none;
-    cursor: pointer;
-    background: #ddd;
 }
 
 .total {
+    font-size: 20px;
     font-weight: bold;
-    font-size: 18px;
 }
-
 </style>
 </head>
 
@@ -115,19 +98,38 @@ button {
 
 <div class="header">Spare Parts Calculator</div>
 
-<!-- DEVICES -->
-<div class="device-list" id="devices"></div>
+<!-- STEP 1 -->
+<div class="section">
+<label>Select Model</label>
+<select id="device" onchange="loadIssues()"></select>
+</div>
 
-<!-- ISSUES -->
+<!-- STEP 2 -->
+<div class="section">
+<label>Reported Issue</label>
 <div class="issue-list" id="issues"></div>
+</div>
 
-<!-- PARTS -->
-<div class="parts" id="parts"></div>
+<!-- STEP 3 -->
+<div class="section" id="partsSection" style="display:none;">
+<label>Frequent Spare Parts</label>
 
-<!-- CART -->
-<div class="cart">
-<h3>Cart</h3>
-<div id="cartItems"></div>
+<table>
+<thead>
+<tr>
+<th>✔</th>
+<th>Part</th>
+<th>GST</th>
+<th>T1</th>
+<th>T2</th>
+</tr>
+</thead>
+<tbody id="parts"></tbody>
+</table>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
 <div class="total" id="total">₹ 0</div>
 </div>
 
@@ -135,147 +137,112 @@ button {
 
 <script>
 
-// 🔥 YOUR DB (ADD 380 SAME FORMAT)
-const masterDB = {
-"All models": {
-    "Basic Service": [
-        {n:"Service Charge",t1:3500,t2:4000,g:0.18},
-        {n:"Unit Calibration",t1:3000,t2:4000,g:0.18}
+// 🔥 DATA (expand this)
+const DB = {
+"All Models": {
+    "Service": [
+        {n:"Service Charge", t1:3500, t2:4000, g:0.18},
+        {n:"Calibration", t1:3000, t2:4000, g:0.18}
     ]
 },
 
 "InBody 270": {
     "LCD Not Working": [
-        {n:"LCD Panel",t1:8730,t2:9970,g:0.05},
-        {n:"Display Cable",t1:880,t2:1000,g:0.05}
+        {n:"LCD Panel", t1:8730, t2:9970, g:0.05},
+        {n:"Display Cable", t1:880, t2:1000, g:0.05}
     ],
     "Weight Issue": [
-        {n:"Loadcell",t1:31150,t2:35600,g:0.05}
+        {n:"Loadcell", t1:31150, t2:35600, g:0.05}
     ]
 },
 
 "InBody 580": {
     "LCD Not Working": [
-        {n:"Board LNO39",t1:29160,t2:33330,g:0.05}
+        {n:"Board LNO39", t1:29160, t2:33330, g:0.05}
     ]
 }
 };
 
-let selectedDevice = null;
-let selectedIssue = null;
-let cart = [];
+let selectedDevice = "";
+let selectedIssue = "";
 
-// INIT DEVICES
+// INIT
 function init() {
-    const container = document.getElementById("devices");
-
-    Object.keys(masterDB).forEach(d => {
-        if (d === "All models") return;
-
-        container.innerHTML += `
-            <div class="device-pill" onclick="selectDevice('${d}', this)">
-                ${d}
-            </div>
-        `;
-    });
+    const devices = Object.keys(DB).filter(d => d !== "All Models");
+    device.innerHTML = '<option>Select Model</option>';
+    devices.forEach(d => device.innerHTML += `<option>${d}</option>`);
 }
 init();
 
-// SELECT DEVICE
-function selectDevice(device, el) {
-    selectedDevice = device;
-    selectedIssue = null;
-
-    document.querySelectorAll('.device-pill').forEach(e => e.classList.remove('active'));
-    el.classList.add('active');
-
-    loadIssues();
-}
-
 // LOAD ISSUES
 function loadIssues() {
+    selectedDevice = device.value;
     const container = document.getElementById("issues");
     container.innerHTML = "";
 
-    Object.keys(masterDB[selectedDevice]).forEach(issue => {
+    Object.keys(DB[selectedDevice] || {}).forEach(issue => {
         container.innerHTML += `
-            <div class="issue-card" onclick="selectIssue('${issue}', this)">
+            <div class="issue" onclick="selectIssue('${issue}', this)">
                 ${issue}
             </div>
         `;
     });
 
-    document.getElementById("parts").innerHTML = "";
+    partsSection.style.display = "none";
 }
 
 // SELECT ISSUE
 function selectIssue(issue, el) {
     selectedIssue = issue;
 
-    document.querySelectorAll('.issue-card').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.issue').forEach(e => e.classList.remove('active'));
     el.classList.add('active');
 
     loadParts();
 }
 
-// LOAD PARTS (SERVICE + ISSUE)
+// LOAD PARTS
 function loadParts() {
     const parts = [
-        ...(masterDB["All models"]["Basic Service"]),
-        ...(masterDB[selectedDevice][selectedIssue])
+        ...(DB["All Models"]["Service"]),
+        ...(DB[selectedDevice][selectedIssue])
     ];
 
-    const container = document.getElementById("parts");
-    container.innerHTML = "<h3>Frequent Spare Parts</h3>";
+    const tbody = document.getElementById("parts");
+    tbody.innerHTML = "";
 
     parts.forEach(p => {
-        container.innerHTML += `
-            <div class="part">
-                ${p.n} - ₹${p.t1}
-                <span>
-                    <button onclick="addToCart('${p.n}', ${p.t1}, ${p.g})">Add</button>
-                </span>
-            </div>
-        `;
-    });
-}
-
-// CART LOGIC
-function addToCart(name, price, gst) {
-    const existing = cart.find(i => i.name === name);
-    if (existing) existing.qty++;
-    else cart.push({name, price, qty:1, gst});
-
-    renderCart();
-}
-
-function changeQty(name, d) {
-    const item = cart.find(i => i.name === name);
-    item.qty += d;
-    if(item.qty <= 0) cart = cart.filter(i => i.name !== name);
-    renderCart();
-}
-
-function renderCart() {
-    let totalVal = 0;
-    cartItems.innerHTML = "";
-
-    cart.forEach(item => {
-        const val = item.price * item.qty * (1 + item.gst);
-        totalVal += val;
-
-        cartItems.innerHTML += `
-            <div class="cart-item">
-                ${item.name} × ${item.qty} = ₹${Math.round(val)}
-                <div>
-                    <button onclick="changeQty('${item.name}',-1)">-</button>
-                    <button onclick="changeQty('${item.name}',1)">+</button>
-                </div>
-            </div>
+        tbody.innerHTML += `
+            <tr>
+                <td><input type="checkbox" checked class="cb"
+                    data-t1="${p.t1}"
+                    data-t2="${p.t2}"
+                    data-g="${p.g}"
+                    onchange="calc()"></td>
+                <td class="part-name">${p.n}</td>
+                <td>${p.g*100}%</td>
+                <td>${p.t1}</td>
+                <td>${p.t2}</td>
+            </tr>
         `;
     });
 
-    document.getElementById("total").innerText = "₹ " + Math.round(totalVal);
+    partsSection.style.display = "block";
+    calc();
+}
+
+// CALCULATION
+function calc() {
+    let total = 0;
+
+    document.querySelectorAll('.cb:checked').forEach(c => {
+        const price = parseFloat(c.dataset.t1);
+        const gst = 1 + parseFloat(c.dataset.g);
+        total += price * gst;
+    });
+
+    document.getElementById("total").innerText =
+        "₹ " + Math.round(total).toLocaleString();
 }
 
 </script>

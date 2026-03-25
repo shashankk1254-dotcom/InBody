@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InBody India CS Tool</title>
+  <style>
+    :root {
+      --blue: #003399;
+      --blue-lt: #0b4bd1;
+      --dark: #101827;
+      --bg: #f0f4fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --chip: #eef4ff;
+      --success: #0f766e;
+      --warning: #b45309;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-lt) 100%);
+      color: #fff;
+      padding: 18px 24px;
+    }
+    .header h1 { font-size: 1.15rem; font-weight: 800; letter-spacing: -.01em; }
+    .header p  { font-size: .78rem; color: rgba(255,255,255,.75); margin-top: 3px; }
+
+    /* MAIN */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* CARD */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 8px rgba(0,0,50,.05);
+      overflow: hidden;
+    }
+
+    /* STEP LABEL */
+    .step-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .step-num {
+      width: 20px; height: 20px;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 50%;
+      font-size: .66rem;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* SELECTORS ROW */
+    .selectors-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+    .selector-block {
+      padding: 16px 18px;
+      border-right: 1px solid var(--line);
+    }
+    .selector-block:last-child { border-right: none; }
+
+    select, input[type='search'] {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: .9rem;
+      outline: none;
+      background: #fff;
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    select:focus, input[type='search']:focus {
+      border-color: #6aa6ff;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.10);
+    }
+
+    /* ISSUE GRID */
+    .issues-wrap { padding: 14px 18px; border-top: 1px solid var(--line); }
+    .issue-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+    .btn-issue {
+      border: 1.5px solid var(--line);
+      background: #fff;
+      border-radius: 9px;
+      padding: 8px 14px;
+      font-size: .83rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #374151;
+      transition: .13s ease;
+    }
+    .btn-issue:hover { border-color: #9dbaf5; background: #f6f9ff; }
+    .btn-issue.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    /* FILTER BAR */
+    .filters-wrap {
+      padding: 12px 18px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      background: #fafbff;
+    }
+    .filters-wrap select { width: 150px; flex-shrink: 0; }
+    .filters-wrap input  { flex: 1; min-width: 160px; }
+    .mini-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--blue);
+      font-weight: 700;
+      font-size: .78rem;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: .13s;
+    }
+    .mini-btn:hover { background: var(--chip); }
+
+    /* PARTS TABLE */
+    .table-wrap {
+      overflow-x: auto;
+      border-top: 1px solid var(--line);
+    }
+    table { width: 100%; min-width: 680px; border-collapse: collapse; }
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #f0f3f8;
+      font-size: .855rem;
+      text-align: center;
+    }
+    th {
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: .67rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 700;
+      position: sticky; top: 0; z-index: 2;
+    }
+    td.part { text-align: left; min-width: 220px; }
+    td.part strong { display: block; font-size: .855rem; }
+    td.part small   { color: var(--muted); font-size: .74rem; }
+    tr.hidden { display: none; }
+    tr:hover td { background: #f9fbff; }
+
+    .side-pill, .gst-pill, .status-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 24px; padding: 3px 7px;
+      border-radius: 999px; font-weight: 700; font-size: .68rem;
+    }
+    .side-pill { background: #eef2ff; color: #3730a3; }
+    .side-none { background: #f3f4f6; color: #9ca3af; }
+    .gst-pill   { background: #ecfeff; color: #155e75; }
+    .status-pill.missing { background: #fff7ed; color: var(--warning); }
+    .status-pill.ok      { background: #ecfdf5; color: var(--success); }
+    .empty { padding: 28px; text-align: center; color: var(--muted); font-size: .88rem; }
+
+    /* SERVICE CHARGES */
+    .svc-panel {
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      background: #f8faff;
+    }
+    .svc-label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .svc-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+    .svc-chip {
+      border: 1.5px solid var(--line);
+      background: #fff;
+      border-radius: 9px;
+      padding: 8px 13px;
+      font-size: .81rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #374151;
+      transition: .13s ease;
+      display: flex; align-items: center; gap: 7px;
+      user-select: none;
+    }
+    .svc-chip:hover { border-color: #9dbaf5; background: #f6f9ff; }
+    .svc-chip.active { background: #eef4ff; border-color: var(--blue); color: var(--blue); }
+    .svc-chip input[type=checkbox] {
+      width: 14px; height: 14px;
+      accent-color: var(--blue);
+      cursor: pointer; flex-shrink: 0;
+    }
+    .svc-price { font-size: .73rem; color: var(--muted); }
+
+    /* FINAL PRICING */
+    .pricing-section {
+      background: linear-gradient(160deg, #0d1928 0%, #111e36 100%);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.06);
+      overflow: hidden;
+    }
+    .pricing-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .pricing-title { color: #fff; font-size: .95rem; font-weight: 800; }
+    .pricing-sub   { color: #5b7492; font-size: .76rem; margin-top: 2px; }
+
+    /* BREAKDOWN TABLE */
+    .breakdown-wrap { padding: 14px 20px; overflow-x: auto; }
+    .breakdown-table {
+      width: 100%;
+      min-width: 480px;
+      border-collapse: collapse;
+    }
+    .breakdown-table th {
+      background: rgba(255,255,255,.04);
+      color: #5b7492;
+      font-size: .66rem;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      padding: 7px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      position: static;
+    }
+    .breakdown-table th:not(:first-child) { text-align: right; }
+    .breakdown-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      color: #c0d0e0;
+      font-size: .82rem;
+      text-align: left;
+      background: transparent;
+    }
+    .breakdown-table td:not(:first-child) { text-align: right; }
+    .breakdown-table .svc-row td { color: #7dd3fc; }
+    .breakdown-table .sub-row td {
+      border-top: 1px solid rgba(255,255,255,.09);
+      border-bottom: none;
+      color: #4a6080;
+      font-size: .73rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding-top: 10px;
+    }
+    .breakdown-table .grand-row td {
+      border-top: 1px solid rgba(255,255,255,.14);
+      border-bottom: none;
+      padding-top: 12px;
+      padding-bottom: 4px;
+      font-weight: 800;
+    }
+    .breakdown-table .grand-row td:first-child { color: #fff; font-size: .85rem; }
+
+    /* TOTALS ROW */
+    .totals-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+    .total-block { padding: 16px 20px; }
+    .total-block:not(:last-child) { border-right: 1px solid rgba(255,255,255,.06); }
+    .total-val {
+      font-size: 1.45rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .total-val.msp { color: #e2e8f0; font-size: 1.45rem; }
+    .total-val.t1  { color: #38bdf8; }
+    .total-val.t2  { color: #00d4ff; }
+    .total-label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .total-block:nth-child(1) .total-label { color: #94a3b8; }
+    .total-block:nth-child(2) .total-label { color: #38bdf8; }
+    .total-block:nth-child(3) .total-label { color: #00d4ff; }
+
+    .gst-note {
+      padding: 8px 20px 14px;
+      font-size: .72rem;
+      color: #2d3f55;
+      border-top: 1px solid rgba(255,255,255,.04);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 860px) {
+      .totals-row { grid-template-columns: 1fr; }
+      .total-block:not(:last-child) { border-right: none; border-bottom: 1px solid rgba(255,255,255,.06); }
+    }
+    @media (max-width: 600px) {
+      .header { padding: 14px 14px; }
+      .selectors-row { grid-template-columns: 1fr; }
+      .selector-block { border-right: none; border-bottom: 1px solid var(--line); }
+      .selector-block:last-child { border-bottom: none; }
+      .issues-wrap, .filters-wrap, .svc-panel, .breakdown-wrap, .pricing-header { padding: 12px 14px; }
+      .total-block { padding: 13px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>InBody India CS Call Center Tool</h1>
+  <p>Spare Parts Calculator with Service Charges</p>
+</div>
+
+<div class="main">
+
+  <!-- CARD: Selectors + Issues + Filters + Parts + Service Charges -->
+  <div class="card">
+
+    <!-- Row: Machine | Issue | Filter -->
+    <div class="selectors-row">
+      <div class="selector-block">
+        <div class="step-label">
+          <div class="step-num">1</div>
+          <span class="step-text">Select Machine</span>
+        </div>
+        <select id="machineSelect">
+          <option value="">— Choose machine —</option>
+        </select>
+      </div>
+
+      <div class="selector-block" id="issueSection" style="display:none;">
+        <div class="step-label">
+          <div class="step-num">2</div>
+          <span class="step-text">Select Issue</span>
+        </div>
+        <div class="issue-grid" id="issueGrid"></div>
+      </div>
+
+      <div class="selector-block" id="filterSection" style="display:none;">
+        <div class="step-label">
+          <div class="step-num">3</div>
+          <span class="step-text">Filter Parts</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <select id="sideFilter">
+            <option value="ALL">All sides</option>
+            <option value="L">Left side (L + common)</option>
+            <option value="R">Right side (R + common)</option>
+          </select>
+          <input id="searchInput" type="search" placeholder="Search part name or item code" />
+          <div style="display:flex;gap:6px;">
+            <button class="mini-btn" id="selectVisibleBtn" type="button">Select all visible</button>
+            <button class="mini-btn" id="clearVisibleBtn"  type="button">Clear all visible</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parts table -->
+    <div id="partsSection" style="display:none;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:42px;"></th>
+              <th style="width:56px;">Side</th>
+              <th style="text-align:left;">Part Description / Item Code</th>
+              <th style="width:56px;">GST</th>
+              <th style="width:96px;">MSP</th>
+              <th style="width:96px;">MRP T1</th>
+              <th style="width:96px;">MRP T2</th>
+            </tr>
+          </thead>
+          <tbody id="partsBody">
+            <tr><td colspan="7" class="empty">Select a machine and issue to load parts.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Service Charges -->
+      <div class="svc-panel">
+        <div class="svc-label">Service Charges — All Models</div>
+        <div class="svc-grid" id="svcGrid"></div>
+      </div>
+    </div>
+
+  </div><!-- /card -->
+
+  <!-- FINAL PRICING -->
+  <div class="pricing-section">
+    <div class="pricing-header">
+      <div class="pricing-title">Estimated Amount</div>
+      <div class="pricing-sub" id="pricingContext">Select machine and issue to begin</div>
+    </div>
+
+    <div class="totals-row">
+      <div class="total-block">
+        <div class="total-label">Total MSP (inc. GST)</div>
+        <div class="total-val msp" id="resMSP">—</div>
+      </div>
+      <div class="total-block">
+        <div class="total-label">Total MRP Tier 1 (inc. GST)</div>
+        <div class="total-val t1" id="resT1">—</div>
+      </div>
+      <div class="total-block">
+        <div class="total-label">Total MRP Tier 2 (inc. GST)</div>
+        <div class="total-val t2" id="resT2">—</div>
+      </div>
+    </div>
+
+    <div class="gst-note">
+      GST applied: Service / Calibration / Firmware items at 18%. Spare parts at 5%. All totals include GST.
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const masterDB = {"All models":{"Basic Service":[{"name":"Service Charge","code":"-","side":"","msp":2500,"t1":3500,"t2":4000,"gst":0.18},{"name":"Unit Calibration","code":"-","side":"","msp":2500,"t1":3000,"t2":4000,"gst":0.18},{"name":"Loadcell Calibration","code":"-","side":"","msp":3000,"t1":4500,"t2":5500,"gst":0.18},{"name":"Firmware Upgrade","code":"-","side":"","msp":1000,"t1":1500,"t2":2000,"gst":0.18},{"name":"Adapter 3.4A BPM040S12F07 (12V, 3.4A)","code":"-","side":"","msp":4490,"t1":5240,"t2":5990,"gst":0.05}]},"InBody 120":{"Error Code \"Err 2\"":[{"name":"Board IF 120 CE4th","code":"I8F310002","side":"","msp":16990,"t1":19820,"t2":22650,"gst":0.05},{"name":"[Assy]LoadCell 1.5mm 120/H20B/H30/H40/Fit etc","code":"H8Q308001","side":"","msp":1820,"t1":2120,"t2":2430,"gst":0.05},{"name":"[Assy]Foot Supporter H20/120","code":"H8G516001","side":"","msp":750,"t1":880,"t2":1000,"gst":0.05}],"Error Code \"S00A, S20A, S21A, S12A, S13A\"":[{"name":"Board Main 120 CE4th","code":"I8F300002","side":"","msp":22330,"t1":26050,"t2":29770,"gst":0.05},{"name":"Cable Hand 120 Rev.1","code":"E01101257","side":"","msp":3000,"t1":3490,"t2":3990,"gst":0.05},{"name":"Board IF 120 CE4th","code":"I8F310002","side":"","msp":16990,"t1":19820,"t2":22650,"gst":0.05}]},"InBody 270":{"Contact Touch Issue":[{"name":"Cable Foot L InBody270 Blue","code":"E01101213","side":"L","msp":860,"t1":1000,"t2":1140,"gst":0.05},{"name":"Cable Foot R InBody270 Yellow","code":"E01101214","side":"R","msp":860,"t1":1000,"t2":1140,"gst":0.05},{"name":"Cable Hand L InBody270 Red","code":"E01101211","side":"L","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"Cable Hand R InBody270 Black","code":"E01101212","side":"R","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"Board Analog InBody270","code":"I8F813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05},{"name":"Board Electrode Hand InBody270","code":"I88118001","side":"","msp":2670,"t1":3120,"t2":3560,"gst":0.05},{"name":"Board Electrode Foot InBody270","code":"I8F921001","side":"","msp":2670,"t1":3120,"t2":3560,"gst":0.05}],"Contact Customer Support":[{"name":"Board DNO2 InBody770","code":"I8D312001","side":"","msp":49880,"t1":58190,"t2":66510,"gst":0.05},{"name":"Board Analog InBody270","code":"I8F813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05},{"name":"Cable IF InBody270","code":"E01106052","side":"","msp":1930,"t1":2250,"t2":2570,"gst":0.05},{"name":"Cable Analog Power Common 270","code":"E01106103","side":"","msp":650,"t1":750,"t2":860,"gst":0.05}],"LCD Not Working":[{"name":"Board LNO6 InBody270 CE4th","code":"I8F920002","side":"","msp":4810,"t1":5610,"t2":6410,"gst":0.05},{"name":"LCD Panel+Touch 470/380/370S/270","code":"E32003001","side":"","msp":7480,"t1":8730,"t2":9970,"gst":0.05},{"name":"Board DNO2 InBody770","code":"I8D312001","side":"","msp":49880,"t1":58190,"t2":66510,"gst":0.05},{"name":"Switch RL3-111-H-0-BK/BK-P5","code":"E00602009","side":"","msp":540,"t1":630,"t2":720,"gst":0.05}],"Bluetooth/Wifi/Printer Not Working":[{"name":"Board IF InBody270","code":"I8F910001","side":"","msp":7690,"t1":8980,"t2":10260,"gst":0.05},{"name":"InBT400-USB","code":"X9S900001","side":"","msp":2780,"t1":3240,"t2":3710,"gst":0.05},{"name":"Cable IF InBody270","code":"E01106052","side":"","msp":1930,"t1":2250,"t2":2570,"gst":0.05},{"name":"Module Wifi AC600 Archer T2U","code":"E32206004","side":"","msp":3210,"t1":3740,"t2":4280,"gst":0.05}],"Weight Measurement Issue":[{"name":"[Assy]Loadcell 270(S)","code":"I8F908001","side":"","msp":26700,"t1":31150,"t2":35600,"gst":0.05},{"name":"Board Analog InBody270","code":"I8F813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05}],"Physical Damage":[{"name":"M_Foot Lower 270(S)","code":"I10201216","side":"","msp":30340,"t1":35390,"t2":40450,"gst":0.05},{"name":"M_Stand 270(S)","code":"I10201053","side":"","msp":18690,"t1":21810,"t2":24920,"gst":0.05},{"name":"M_Foot Upper 270(S)","code":"I10201214","side":"","msp":14320,"t1":16700,"t2":19090,"gst":0.05},{"name":"P_Display Front New 470/270(S) Rev.1","code":"I10301891","side":"","msp":8550,"t1":9970,"t2":11400,"gst":0.05},{"name":"M_Pipe 270(S)","code":"I10201099","side":"","msp":4810,"t1":5610,"t2":6410,"gst":0.05},{"name":"P_Display Back 270(S) Rev.2","code":"I10301895","side":"","msp":3530,"t1":4120,"t2":4700,"gst":0.05},{"name":"P_Key Display Number 270(S)","code":"I10301293","side":"","msp":2670,"t1":3120,"t2":3560,"gst":0.05},{"name":"P_Shoulder Cap 270(S)","code":"I10301455","side":"","msp":2030,"t1":2370,"t2":2710,"gst":0.05},{"name":"P_Shoulder Front R 270(S)/370S/570","code":"I10301239","side":"R","msp":1930,"t1":2250,"t2":2570,"gst":0.05},{"name":"P_Shoulder Front L 270(S)/370S/570","code":"I10301240","side":"L","msp":1930,"t1":2250,"t2":2570,"gst":0.05},{"name":"P_Hand Upper 270(S)/370S/570","code":"I10301187","side":"","msp":1500,"t1":1750,"t2":2000,"gst":0.05},{"name":"P_Foot Supporter 270(S)/370S/770(S)","code":"I10301388","side":"","msp":1290,"t1":1500,"t2":1710,"gst":0.05},{"name":"P_Shoulder Back L 270(S)/370S/570","code":"I10301242","side":"L","msp":1180,"t1":1380,"t2":1570,"gst":0.05},{"name":"P_Shoulder Back R 270(S)/370S/570","code":"I10301241","side":"R","msp":1180,"t1":1380,"t2":1570,"gst":0.05},{"name":"P_Hand Lower 270(S)/370S/570","code":"I10301220","side":"","msp":970,"t1":1130,"t2":1290,"gst":0.05},{"name":"P_Foot Case Cover 270(S)","code":"I10301433","side":"","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"P_Shoulder Joint L 270(S)/370S/570","code":"I10301478","side":"L","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"M_Loadcell Plate 270(S)/770(S)","code":"I10101235","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Shoulder Joint R 270(S)/370S/570","code":"I10301479","side":"R","msp":650,"t1":750,"t2":860,"gst":0.05}]},"InBody 270S":{"Contact Touch Issue":[{"name":"Cable Hand LA Red 270S","code":"E31101032","side":"L","msp":1610,"t1":1870,"t2":2140,"gst":0.05},{"name":"Cable Hand RA Black 270S","code":"E31101036","side":"R","msp":1610,"t1":1870,"t2":2140,"gst":0.05},{"name":"Cable Foot LL Blue 270S","code":"E31101024","side":"L","msp":1610,"t1":1870,"t2":2140,"gst":0.05},{"name":"Cable Foot RL Yellow 270S","code":"E31101028","side":"R","msp":1610,"t1":1870,"t2":2140,"gst":0.05},{"name":"Board ANO34 INO 270S","code":"I8U813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05},{"name":"Board Foot 270S","code":"I8U821001","side":"","msp":2780,"t1":3240,"t2":3710,"gst":0.05},{"name":"Board Hand 270S","code":"I8U818001","side":"","msp":2780,"t1":3240,"t2":3710,"gst":0.05}],"Contact Customer Support":[{"name":"Board DNO34 270S","code":"I8U812001","side":"","msp":57040,"t1":66540,"t2":76050,"gst":0.05},{"name":"Board ANO34 INO 270S","code":"I8U813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05},{"name":"Module SD Card KIOXIA 32GB","code":"E32204004","side":"","msp":2140,"t1":2500,"t2":2850,"gst":0.05},{"name":"Cable SATA 0.17m Red","code":"E31109011","side":"","msp":1070,"t1":1250,"t2":1430,"gst":0.05},{"name":"Cable SATA 0.17m Black","code":"E31109009","side":"","msp":1070,"t1":1250,"t2":1430,"gst":0.05}],"LCD Not Working":[{"name":"Board DNO34 270S","code":"I8U812001","side":"","msp":57040,"t1":66540,"t2":76050,"gst":0.05},{"name":"LCD Panel+Touch 470/380/370S/270","code":"E32003001","side":"","msp":7480,"t1":8730,"t2":9970,"gst":0.05},{"name":"Module SD Card KIOXIA 32GB","code":"E32204004","side":"","msp":2140,"t1":2500,"t2":2850,"gst":0.05},{"name":"Switch RL3-111-H-0-BK/BK-P5","code":"E00602009","side":"","msp":540,"t1":630,"t2":720,"gst":0.05}],"Bluetooth/Printer Not Working":[{"name":"Board ANO34 INO 270S","code":"I8U813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05},{"name":"InBT400-USB","code":"X9S900001","side":"","msp":2780,"t1":3240,"t2":3710,"gst":0.05},{"name":"Module Wifi AC600 Archer T2U","code":"E32206004","side":"","msp":3210,"t1":3740,"t2":4280,"gst":0.05}],"Weight Measurement Issue":[{"name":"[Assy]Loadcell 270(S)","code":"I8F908001","side":"","msp":26700,"t1":31150,"t2":35600,"gst":0.05},{"name":"Board ANO34 INO 270S","code":"I8U813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05}],"Physical Damage":[{"name":"M_Foot Lower 270(S)","code":"I10201216","side":"","msp":30340,"t1":35390,"t2":40450,"gst":0.05},{"name":"M_Stand 270(S)","code":"I10201053","side":"","msp":18690,"t1":21810,"t2":24920,"gst":0.05},{"name":"M_Foot Upper 270(S)","code":"I10201214","side":"","msp":14320,"t1":16700,"t2":19090,"gst":0.05},{"name":"P_Display Front New 470/270(S) Rev.1","code":"I10301891","side":"","msp":8550,"t1":9970,"t2":11400,"gst":0.05},{"name":"M_Pipe 270(S)","code":"I10201099","side":"","msp":4810,"t1":5610,"t2":6410,"gst":0.05},{"name":"P_Display Back 270(S) Rev.2","code":"I10301895","side":"","msp":3530,"t1":4120,"t2":4700,"gst":0.05},{"name":"P_Key Display Number 270(S)","code":"I10301293","side":"","msp":2670,"t1":3120,"t2":3560,"gst":0.05},{"name":"P_Shoulder Cap 270(S)","code":"I10301455","side":"","msp":2030,"t1":2370,"t2":2710,"gst":0.05},{"name":"P_Shoulder Front R 270(S)/370S/570","code":"I10301239","side":"R","msp":1930,"t1":2250,"t2":2570,"gst":0.05},{"name":"P_Shoulder Front L 270(S)/370S/570","code":"I10301240","side":"L","msp":1930,"t1":2250,"t2":2570,"gst":0.05},{"name":"P_Hand Upper 270(S)/370S/570","code":"I10301187","side":"","msp":1500,"t1":1750,"t2":2000,"gst":0.05},{"name":"P_Foot Supporter 270(S)/370S/770(S)","code":"I10301388","side":"","msp":1290,"t1":1500,"t2":1710,"gst":0.05},{"name":"P_Shoulder Back L 270(S)/370S/570","code":"I10301242","side":"L","msp":1180,"t1":1380,"t2":1570,"gst":0.05},{"name":"P_Shoulder Back R 270(S)/370S/570","code":"I10301241","side":"R","msp":1180,"t1":1380,"t2":1570,"gst":0.05},{"name":"P_Hand Lower 270(S)/370S/570","code":"I10301220","side":"","msp":970,"t1":1130,"t2":1290,"gst":0.05},{"name":"P_Foot Case Cover 270(S)","code":"I10301433","side":"","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"P_Shoulder Joint L 270(S)/370S/570","code":"I10301478","side":"L","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"M_Loadcell Plate 270(S)/770(S)","code":"I10101235","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Shoulder Joint R 270(S)/370S/570","code":"I10301479","side":"R","msp":650,"t1":750,"t2":860,"gst":0.05}]},"InBody 380":{"Contact Touch Issue":[{"name":"Cable Electrode Foot L Blue 580/380","code":"E01101271","side":"L","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Cable Electrode Foot R Yellow 580/380","code":"E01101272","side":"R","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Cable Electrode Hand L Red 580/380","code":"E01101269","side":"L","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Cable Electrode Hand R Black 580/380","code":"E01101270","side":"R","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Board ANO6 580/380","code":"I8P913001","side":"","msp":61410,"t1":71650,"t2":81880,"gst":0.05},{"name":"Board Hand Electrode 580/380","code":"I8P918001","side":"","msp":4700,"t1":5490,"t2":6270,"gst":0.05},{"name":"Board Foot Electrode 380","code":"I8P921001","side":"","msp":4700,"t1":5490,"t2":6270,"gst":0.05}],"Contact Customer Support":[{"name":"Board ANO6 580/380","code":"I8P913001","side":"","msp":61410,"t1":71650,"t2":81880,"gst":0.05},{"name":"Board DNO3 BWA(S)/970(S)/770S/580/380","code":"I8I412001","side":"","msp":57040,"t1":66540,"t2":76050,"gst":0.05},{"name":"Module SD Card KIOXIA 32GB","code":"E32204004","side":"","msp":2140,"t1":2500,"t2":2850,"gst":0.05},{"name":"Cable SATA 1m Black 380","code":"E01106180","side":"","msp":1390,"t1":1620,"t2":1860,"gst":0.05},{"name":"Cable SATA 1m Red 380","code":"E01106179","side":"","msp":1390,"t1":1620,"t2":1860,"gst":0.05}],"LCD Not Working":[{"name":"Board DNO3 BWA(S)/970(S)/770S/580/380","code":"I8I412001","side":"","msp":57040,"t1":66540,"t2":76050,"gst":0.05},{"name":"Board LNO38 380","code":"I8P920001","side":"","msp":23180,"t1":27040,"t2":30910,"gst":0.05},{"name":"LCD Panel+Touch 470/380/370S/270","code":"E32003001","side":"","msp":7480,"t1":8730,"t2":9970,"gst":0.05},{"name":"Module SD Card KIOXIA 32GB","code":"E32204004","side":"","msp":2140,"t1":2500,"t2":2850,"gst":0.05}],"Bluetooth/Printer Not Working":[{"name":"Board ANO6 580/380","code":"I8P913001","side":"","msp":61410,"t1":71650,"t2":81880,"gst":0.05},{"name":"InBT400-USB","code":"X9S900001","side":"","msp":2780,"t1":3240,"t2":3710,"gst":0.05},{"name":"Module Wifi AC600 Archer T2U","code":"E32206004","side":"","msp":3210,"t1":3740,"t2":4280,"gst":0.05},{"name":"Cable INO38 580/380","code":"E01106178","side":"","msp":3210,"t1":3740,"t2":4280,"gst":0.05}],"Weight Measurement Issue":[{"name":"Board Loadcell 970(S)/580/380","code":"I8I419003","side":"","msp":24030,"t1":28040,"t2":32040,"gst":0.05},{"name":"Cable Loadcell 580/380","code":"E01107003","side":"","msp":1070,"t1":1250,"t2":1430,"gst":0.05},{"name":"[Assy]LoadCell 380/580","code":"I8P908001","side":"","msp":null,"t1":null,"t2":null,"gst":0.05},{"name":"Board ANO34 INO 270S","code":"I8U813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05}],"Physical Damage":[{"name":"M_Foot Frame 380","code":"I10201255","side":"","msp":47210,"t1":55080,"t2":62950,"gst":0.05},{"name":"P_Stand Front 380","code":"I10301811","side":"","msp":12500,"t1":14580,"t2":16670,"gst":0.05},{"name":"P_Head Front 380","code":"I10301804","side":"","msp":7800,"t1":9100,"t2":10400,"gst":0.05},{"name":"M_Hand Pipe R 380","code":"I10201252","side":"R","msp":6840,"t1":7980,"t2":9120,"gst":0.05},{"name":"M_Hand Pipe L 380","code":"I10201253","side":"L","msp":6840,"t1":7980,"t2":9120,"gst":0.05},{"name":"M_Foot Balance Bracket 380","code":"I10101411","side":"","msp":5770,"t1":6730,"t2":7690,"gst":0.05},{"name":"P_Head Bezel 380","code":"I10301810","side":"","msp":5240,"t1":6110,"t2":6980,"gst":0.05},{"name":"P_Stand Back 380","code":"I10301817","side":"","msp":4700,"t1":5490,"t2":6270,"gst":0.05},{"name":"P_Stand Top Front 380","code":"I10301812","side":"","msp":3960,"t1":4620,"t2":5270,"gst":0.05},{"name":"P_Head Back 380","code":"I10301805","side":"","msp":3740,"t1":4370,"t2":4990,"gst":0.05},{"name":"M_Head Bracket L 380","code":"I10101395","side":"L","msp":2140,"t1":2500,"t2":2850,"gst":0.05},{"name":"M_Head Bracket R 380","code":"I10101396","side":"R","msp":2140,"t1":2500,"t2":2850,"gst":0.05},{"name":"P_Hand Upper 580/380","code":"I10301835","side":"","msp":2030,"t1":2370,"t2":2710,"gst":0.05},{"name":"P_Stand Top Back 380","code":"I10301813","side":"","msp":1390,"t1":1620,"t2":1860,"gst":0.05},{"name":"P_Shoulder Cover 580/380","code":"I10301824","side":"","msp":1290,"t1":1500,"t2":1710,"gst":0.05},{"name":"P_Hand Lower 580/380","code":"I10301834","side":"","msp":860,"t1":1000,"t2":1140,"gst":0.05},{"name":"P_Shoulder Joint L 580/380","code":"I10301828","side":"L","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"P_Shoulder Joint R 580/380","code":"I10301827","side":"R","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"P_Shoulder Front 580/380","code":"I10301822","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Shoulder Back 580/380","code":"I10301823","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Head Module Cover 380","code":"I10301807","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Shoulder Cap R 380","code":"I10301825","side":"R","msp":540,"t1":630,"t2":720,"gst":0.05},{"name":"P_Shoulder Cap L 380","code":"I10301826","side":"L","msp":540,"t1":630,"t2":720,"gst":0.05}]},"InBody 580":{"Contact Touch Issue":[{"name":"Cable Electrode Foot L Blue 580/380","code":"E01101271","side":"L","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Cable Electrode Foot R Yellow 580/380","code":"E01101272","side":"R","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Cable Electrode Hand L Red 580/380","code":"E01101269","side":"L","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Cable Electrode Hand R Black 580/380","code":"E01101270","side":"R","msp":3320,"t1":3870,"t2":4420,"gst":0.05},{"name":"Board ANO6 580/380","code":"I8P913001","side":"","msp":61410,"t1":71650,"t2":81880,"gst":0.05},{"name":"Board Hand Electrode 580/380","code":"I8P918001","side":"","msp":4700,"t1":5490,"t2":6270,"gst":0.05},{"name":"Board Foot Electrode 580","code":"I8R621001","side":"","msp":4810,"t1":5610,"t2":6410,"gst":0.05}],"Contact Customer Support":[{"name":"Board ANO6 580/380","code":"I8P913001","side":"","msp":61410,"t1":71650,"t2":81880,"gst":0.05},{"name":"Board DNO3 BWA(S)/970(S)/770S/580/380","code":"I8I412001","side":"","msp":57040,"t1":66540,"t2":76050,"gst":0.05},{"name":"Module SD Card KIOXIA 32GB","code":"E32204004","side":"","msp":2140,"t1":2500,"t2":2850,"gst":0.05},{"name":"Cable SATA 1m Black 380","code":"E01106180","side":"","msp":1390,"t1":1620,"t2":1860,"gst":0.05},{"name":"Cable SATA 1m Red 380","code":"E01106179","side":"","msp":1390,"t1":1620,"t2":1860,"gst":0.05}],"LCD Not Working":[{"name":"Board DNO3 BWA(S)/970(S)/770S/580/380","code":"I8I412001","side":"","msp":57040,"t1":66540,"t2":76050,"gst":0.05},{"name":"Board LNO39 580","code":"I8P920001","side":"","msp":25000,"t1":29160,"t2":33330,"gst":0.05},{"name":"LCD Panel+Touch 470/380/370S/270","code":"E32003001","side":"","msp":7480,"t1":8730,"t2":9970,"gst":0.05},{"name":"Module SD Card KIOXIA 32GB","code":"E32204004","side":"","msp":2140,"t1":2500,"t2":2850,"gst":0.05}],"Bluetooth/Printer Not Working":[{"name":"Board ANO6 580/380","code":"I8P913001","side":"","msp":61410,"t1":71650,"t2":81880,"gst":0.05},{"name":"InBT400-USB","code":"X9S900001","side":"","msp":2780,"t1":3240,"t2":3710,"gst":0.05},{"name":"Module Wifi AC600 Archer T2U","code":"E32206004","side":"","msp":3210,"t1":3740,"t2":4280,"gst":0.05},{"name":"Cable INO38 580/380","code":"E01106178","side":"","msp":3210,"t1":3740,"t2":4280,"gst":0.05}],"Weight Measurement Issue":[{"name":"Board Loadcell 970(S)/580/380","code":"I8I419003","side":"","msp":24030,"t1":28040,"t2":32040,"gst":0.05},{"name":"Cable Loadcell 580/380","code":"E01107003","side":"","msp":1070,"t1":1250,"t2":1430,"gst":0.05},{"name":"[Assy]LoadCell 380/580","code":"I8P908001","side":"","msp":null,"t1":null,"t2":null,"gst":0.05},{"name":"Board ANO34 INO 270S","code":"I8U813001","side":"","msp":45390,"t1":52960,"t2":60520,"gst":0.05}],"Physical Damage":[{"name":"P_Foot Case 580","code":"I10301871","side":"","msp":35680,"t1":41620,"t2":47570,"gst":0.05},{"name":"P_Stand Front 580","code":"I10301865","side":"","msp":24030,"t1":28040,"t2":32040,"gst":0.05},{"name":"P_Head Bezel 580","code":"I10301864","side":"","msp":15170,"t1":17700,"t2":20230,"gst":0.05},{"name":"P_Head Front 580","code":"I10301858","side":"","msp":9830,"t1":11470,"t2":13110,"gst":0.05},{"name":"M_Hand Pipe R 580","code":"I10201246","side":"R","msp":7270,"t1":8480,"t2":9690,"gst":0.05},{"name":"M_Hand Pipe L 580","code":"I10201247","side":"L","msp":7270,"t1":8480,"t2":9690,"gst":0.05},{"name":"P_Stand Back 580","code":"I10301867","side":"","msp":6310,"t1":7360,"t2":8410,"gst":0.05},{"name":"P_Stand Top Front 580","code":"I10301866","side":"","msp":5130,"t1":5990,"t2":6840,"gst":0.05},{"name":"P_Head Back 580","code":"I10301859","side":"","msp":4280,"t1":4990,"t2":5700,"gst":0.05},{"name":"P_Hand Upper 580/380","code":"I10301835","side":"","msp":2030,"t1":2370,"t2":2710,"gst":0.05},{"name":"P_Shoulder Cover 580/380","code":"I10301824","side":"","msp":1290,"t1":1500,"t2":1710,"gst":0.05},{"name":"P_Shoulder Cap 580","code":"I10301870","side":"","msp":1070,"t1":1250,"t2":1430,"gst":0.05},{"name":"P_Hand Lower 580/380","code":"I10301834","side":"","msp":860,"t1":1000,"t2":1140,"gst":0.05},{"name":"P_Shoulder Joint L 580/380","code":"I10301828","side":"L","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"P_Shoulder Joint R 580/380","code":"I10301827","side":"R","msp":750,"t1":880,"t2":1000,"gst":0.05},{"name":"P_Shoulder Front 580/380","code":"I10301822","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Shoulder Back 580/380","code":"I10301823","side":"","msp":650,"t1":750,"t2":860,"gst":0.05},{"name":"P_Head Module Cover 580","code":"I10301862","side":"","msp":540,"t1":630,"t2":720,"gst":0.05},{"name":"P_Shoulder T Washer POM 580/380","code":"I10301832","side":"","msp":330,"t1":380,"t2":430,"gst":0.05}]}};
+
+const SVC = masterDB["All models"]["Basic Service"];
+
+const el = id => document.getElementById(id);
+const els = {
+  machineSelect:    el('machineSelect'),
+  issueGrid:        el('issueGrid'),
+  issueSection:     el('issueSection'),
+  filterSection:    el('filterSection'),
+  partsSection:     el('partsSection'),
+  svcGrid:          el('svcGrid'),
+  sideFilter:       el('sideFilter'),
+  searchInput:      el('searchInput'),
+  partsBody:        el('partsBody'),
+  resMSP:           el('resMSP'),
+  resT1:            el('resT1'),
+  resT2:            el('resT2'),
+  pricingContext:   el('pricingContext'),
+  selectVisibleBtn: el('selectVisibleBtn'),
+  clearVisibleBtn:  el('clearVisibleBtn')
+};
+
+const state = { machine: '', issue: '' };
+
+const fmt  = v => (v == null || isNaN(v)) ? '—' : '₹\u202f' + Math.round(v).toLocaleString('en-IN');
+const bare = v => (v == null || isNaN(v)) ? '—' : Math.round(v).toLocaleString('en-IN');
+const esc  = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ── INIT MACHINES ── */
+function initMachines() {
+  Object.keys(masterDB).filter(k => k !== 'All models').forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    els.machineSelect.appendChild(o);
+  });
+}
+
+/* ── SERVICE CHARGES: render all, only Service Charge checked by default ── */
+function renderServiceCharges() {
+  els.svcGrid.innerHTML = '';
+  SVC.forEach((svc, i) => {
+    const isServiceCharge = svc.name === 'Service Charge';
+    const lbl = document.createElement('label');
+    lbl.className = 'svc-chip' + (isServiceCharge ? ' active' : '');
+    lbl.innerHTML = `
+      <input type="checkbox" class="svc-check" data-idx="${i}" ${isServiceCharge ? 'checked' : ''} />
+      <span>${esc(svc.name)}</span>
+    `;
+    lbl.querySelector('input').addEventListener('change', function() {
+      lbl.classList.toggle('active', this.checked);
+      calcTotals();
+    });
+    els.svcGrid.appendChild(lbl);
+  });
+}
+
+/* ── RENDER ISSUES ── */
+function renderIssues() {
+  const machine = els.machineSelect.value;
+  state.machine = machine;
+  state.issue = '';
+  els.issueGrid.innerHTML = '';
+  els.partsSection.style.display = 'none';
+  els.filterSection.style.display = 'none';
+  clearPricing();
+  if (!machine || !masterDB[machine]) {
+    els.issueSection.style.display = 'none';
+    els.partsBody.innerHTML = '<tr><td colspan="7" class="empty">Select a machine and issue to load parts.</td></tr>';
+    els.pricingContext.textContent = 'Select machine and issue to begin';
+    return;
+  }
+  els.issueSection.style.display = 'block';
+  Object.keys(masterDB[machine]).forEach(issue => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-issue';
+    btn.textContent = issue;
+    btn.addEventListener('click', () => renderParts(issue, btn));
+    els.issueGrid.appendChild(btn);
+  });
+}
+
+function clearPricing() {
+  els.resMSP.textContent = '—';
+  els.resT1.textContent  = '—';
+  els.resT2.textContent  = '—';
+}
+
+/* ── BUILD PARTS ROW ── */
+function buildRow(part, index) {
+  const missing = part.msp == null || part.t1 == null || part.t2 == null;
+  return `<tr data-side="${part.side || 'NONE'}" data-search="${esc((part.name+' '+part.code).toLowerCase())}">
+    <td><input type="checkbox" class="part-check" data-idx="${index}" ${missing ? '' : 'checked'} /></td>
+    <td><span class="side-pill ${part.side ? '' : 'side-none'}">${esc(part.side || '—')}</span></td>
+    <td class="part"><strong>${esc(part.name)}</strong><small>${esc(part.code)}</small></td>
+    <td><span class="gst-pill">${Math.round((part.gst||0)*100)}%</span></td>
+    <td>${bare(part.msp)}</td>
+    <td style="font-weight:700;color:var(--blue);">${bare(part.t1)}</td>
+    <td>${bare(part.t2)}</td>
+  </tr>`;
+}
+
+/* ── RENDER PARTS ── */
+function renderParts(issue, btn) {
+  document.querySelectorAll('.btn-issue').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.issue = issue;
+  els.filterSection.style.display = 'block';
+  els.partsSection.style.display  = 'block';
+  els.sideFilter.value  = 'ALL';
+  els.searchInput.value = '';
+  els.pricingContext.textContent = state.machine + ' — ' + issue;
+  renderServiceCharges();
+
+  const parts = masterDB[state.machine][issue] || [];
+  if (!parts.length) {
+    els.partsBody.innerHTML = '<tr><td colspan="7" class="empty">No parts found.</td></tr>';
+    clearPricing();
+    return;
+  }
+  els.partsBody.innerHTML = parts.map((p, i) => buildRow(p, i)).join('');
+  document.querySelectorAll('.part-check').forEach(cb => cb.addEventListener('change', calcTotals));
+  applyFilters();
+  calcTotals();
+}
+
+/* ── SMART SIDE FILTER ──
+   ALL  → show everything
+   L    → show side=L and side="" (common parts), hide side=R
+   R    → show side=R and side="" (common parts), hide side=L
+*/
+function applyFilters() {
+  const side = els.sideFilter.value;
+  const term = els.searchInput.value.trim().toLowerCase();
+
+  Array.from(els.partsBody.querySelectorAll('tr')).forEach(row => {
+    const rowSide   = row.dataset.side || 'NONE';  // 'L', 'R', or 'NONE' (common)
+    const rowSearch = row.dataset.search || '';
+
+    let sideOk;
+    if (side === 'ALL') {
+      sideOk = true;
+    } else if (side === 'L') {
+      // show L and common (NONE), hide R
+      sideOk = rowSide === 'L' || rowSide === 'NONE';
+    } else if (side === 'R') {
+      // show R and common (NONE), hide L
+      sideOk = rowSide === 'R' || rowSide === 'NONE';
+    }
+
+    const searchOk = !term || rowSearch.includes(term);
+    row.classList.toggle('hidden', !(sideOk && searchOk));
+  });
+
+  calcTotals();
+}
+
+/* ── CALC TOTALS ── */
+function calcTotals() {
+  const parts = masterDB[state.machine]?.[state.issue] || [];
+  let partsMSP = 0, partsT1 = 0, partsT2 = 0;
+  const partRows = [];
+
+  document.querySelectorAll('.part-check').forEach(cb => {
+    const part = parts[Number(cb.dataset.idx)];
+    if (!cb.checked || !part) return;
+    const g = 1 + (Number(part.gst) || 0);
+    const m = part.msp != null ? part.msp * g : null;
+    const t1 = part.t1 != null ? part.t1 * g : null;
+    const t2 = part.t2 != null ? part.t2 * g : null;
+    if (m)  partsMSP += m;
+    if (t1) partsT1  += t1;
+    if (t2) partsT2  += t2;
+    partRows.push({ name: part.name, gst: part.gst, m, t1, t2 });
+  });
+
+  let svcMSP = 0, svcT1 = 0, svcT2 = 0;
+  const svcRows = [];
+
+  document.querySelectorAll('.svc-check').forEach(cb => {
+    const svc = SVC[Number(cb.dataset.idx)];
+    if (!cb.checked || !svc) return;
+    const g = 1 + (Number(svc.gst) || 0);
+    const m  = svc.msp != null ? svc.msp * g : null;
+    const t1 = svc.t1  != null ? svc.t1  * g : null;
+    const t2 = svc.t2  != null ? svc.t2  * g : null;
+    if (m)  svcMSP += m;
+    if (t1) svcT1  += t1;
+    if (t2) svcT2  += t2;
+    svcRows.push({ name: svc.name, gst: svc.gst, m, t1, t2 });
+  });
+
+  const totalMSP = partsMSP + svcMSP;
+  const totalT1  = partsT1  + svcT1;
+  const totalT2  = partsT2  + svcT2;
+
+  els.resMSP.textContent = fmt(totalMSP || null);
+  els.resT1.textContent  = fmt(totalT1  || null);
+  els.resT2.textContent  = fmt(totalT2  || null);
+}
+
+function toggleVisible(checked) {
+  Array.from(els.partsBody.querySelectorAll('tr:not(.hidden)')).forEach(row => {
+    const cb = row.querySelector('.part-check');
+    if (cb) cb.checked = checked;
+  });
+  calcTotals();
+}
+
+/* ── WIRE EVENTS ── */
+els.machineSelect.addEventListener('change', renderIssues);
+els.sideFilter.addEventListener('change', applyFilters);
+els.searchInput.addEventListener('input', applyFilters);
+els.selectVisibleBtn.addEventListener('click', () => toggleVisible(true));
+els.clearVisibleBtn.addEventListener('click',  () => toggleVisible(false));
+
+initMachines();
+renderServiceCharges();
+</script>
+</body>
+</html>
